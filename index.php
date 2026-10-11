@@ -22,10 +22,22 @@ if (file_exists($cacheFile)) {
         $taxasIniciais = $conteudo;
     }
 }
+
+$gaTag = trim(getenv('GOOGLE_ANALYTICS_TAG') ?: ($_ENV['GOOGLE_ANALYTICS_TAG'] ?? ($_SERVER['GOOGLE_ANALYTICS_TAG'] ?? '')));
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR" data-bs-theme="light">
 <head>
+    <?php if (!empty($gaTag)): ?>
+    <!-- Google tag (gtag.js) via Vercel Env GOOGLE_ANALYTICS_TAG -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=<?= htmlspecialchars($gaTag) ?>"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', '<?= htmlspecialchars($gaTag) ?>');
+    </script>
+    <?php endif; ?>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulador de Renda Fixa & ETFs - Pedro Falconi (Open Source)</title>

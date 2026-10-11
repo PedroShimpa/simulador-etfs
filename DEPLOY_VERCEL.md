@@ -59,8 +59,18 @@ Se você tiver o Node.js instalado:
 3. **CORS Habilitado**:
    - Cabeçalhos `Access-Control-Allow-Origin: *` habilitados em todas as APIs, permitindo que previews em URLs dinâmicas da Vercel (`*.vercel.app`) funcionem perfeitamente.
 
-4. **Motor Híbrido com Fallback Client-Side**:
+4. **Google Analytics GA4 via Variável de Ambiente (`GOOGLE_ANALYTICS_TAG`)**:
+   - Para ativar o rastreamento do Google Analytics no seu projeto na Vercel:
+     1. Acesse o painel do seu projeto em [vercel.com](https://vercel.com).
+     2. Vá em **Settings** ➔ **Environment Variables**.
+     3. Adicione uma nova variável:
+        - **Key (Nome)**: `GOOGLE_ANALYTICS_TAG`
+        - **Value (Valor)**: `G-XXXXXXXXXX` (substitua pela sua Tag do Google Analytics 4)
+        - **Environments**: Marque `Production`, `Preview` e `Development`.
+     4. Clique em **Save**. O script do Google Tag Manager será carregado automaticamente e registrará eventos de simulação!
+
+5. **Motor Híbrido com Fallback Client-Side**:
    - Caso uma requisição serverless sofra com *cold-start* ou limitações de rede temporárias, o JavaScript (`app.js`) ativa automaticamente um motor de cálculo idêntico no navegador, garantindo **100% de disponibilidade contínua** para o usuário.
 
-5. **`.vercelignore` Otimizado**:
+6. **`.vercelignore` Otimizado**:
    - Evita o envio de arquivos de testes locais, caches antigos e artefatos de desenvolvimento.
