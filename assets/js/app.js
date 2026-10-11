@@ -26,6 +26,8 @@ let chartEvolutionInstance = null;
 let chartCostsInstance = null;
 let currentSimulationData = null;
 let dadosB3Cache = null;
+let filtroMercadoAtual = 'todos';
+let buscaMercadoTermo = '';
 
 // Inicializador Dinâmico do Google Analytics via Vercel Env (GOOGLE_ANALYTICS_TAG)
 async function carregarGoogleAnalytics() {
@@ -68,6 +70,7 @@ function initGoogleTag(tagId) {
 document.addEventListener('DOMContentLoaded', () => {
     initThemeManager();
     initQuickPrazoButtons();
+    initMarketFilterControls();
     initMasksAndInputs();
     
     // Carregar dados reais da B3 e BrasilAPI
@@ -138,7 +141,7 @@ function setTheme(theme) {
 
 // Configura botões rápidos de prazo
 function initQuickPrazoButtons() {
-    const buttons = document.querySelectorAll('.btn-quick-prazo');
+    const buttons = document.querySelectorAll('.btn-quick-prazo[data-anos]');
     const inputPrazoAnos = document.getElementById('input-prazo-anos');
     const inputPrazoMeses = document.getElementById('input-prazo-meses');
 
@@ -164,6 +167,31 @@ function initQuickPrazoButtons() {
             }
         });
     });
+}
+
+// Configura filtros e campo de busca da tabela de mercado B3
+function initMarketFilterControls() {
+    const filterButtons = document.querySelectorAll('.btn-filter-mercado');
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            filterButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            filtroMercadoAtual = btn.dataset.filtro || 'todos';
+            if (dadosB3Cache) {
+                renderB3MarketTable(dadosB3Cache);
+            }
+        });
+    });
+
+    const searchInput = document.getElementById('input-busca-mercado');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            buscaMercadoTermo = e.target.value;
+            if (dadosB3Cache) {
+                renderB3MarketTable(dadosB3Cache);
+            }
+        });
+    }
 }
 
 function initMasksAndInputs() {
@@ -237,14 +265,32 @@ async function carregarDadosMercadoIntegrados(forceRefresh = false) {
 
 function renderB3FallbackDefault() {
     const fallbackB3 = {
+        total_etfs: 12,
         etfs: {
-            'B5P211': { ticker: 'B5P211', nome: 'IT NOW IMA-B5 P2', preco: 115.42, variacao_perc: 0.15, min_52w: 71.25, max_52w: 115.77, volume: 474707 },
-            'IMAB11': { ticker: 'IMAB11', nome: 'IT NOW IMA-B ETF', preco: 125.28, variacao_perc: -0.06, min_52w: 79.50, max_52w: 126.35, volume: 110611 },
-            'LFTS11': { ticker: 'LFTS11', nome: 'INVESTO TESOURO SELIC', preco: 161.21, variacao_perc: 0.05, min_52w: 141.12, max_52w: 161.24, volume: 196753 },
-            'FIXA11': { ticker: 'FIXA11', nome: 'MIRAETECH PREFIXADO', preco: 20.88, variacao_perc: 0.34, min_52w: 12.30, max_52w: 20.88, volume: 8264 }
+            'B5P211': { ticker: 'B5P211', nome: 'It Now IMA-B 5 P2 (Tesouro IPCA até 5 anos)', categoria: 'Renda Fixa IPCA', indexador: 'IMA-B 5 (Duration Curta)', aliquota_ir: '15% fixo (sem come-cotas)', preco: 115.42, variacao_perc: 0.15, min_52w: 71.25, max_52w: 115.77, volume: 474707 },
+            'IMAB11': { ticker: 'IMAB11', nome: 'It Now IMA-B Total (Cesta Ampla Tesouro IPCA)', categoria: 'Renda Fixa IPCA', indexador: 'IMA-B Geral', aliquota_ir: '15% fixo (sem come-cotas)', preco: 125.28, variacao_perc: -0.06, min_52w: 79.50, max_52w: 126.35, volume: 110611 },
+            'IB5M11': { ticker: 'IB5M11', nome: 'It Now IMA-B 5+ (Tesouro IPCA Longo > 5 anos)', categoria: 'Renda Fixa IPCA', indexador: 'IMA-B 5+ (Longo Prazo)', aliquota_ir: '15% fixo (sem come-cotas)', preco: 138.14, variacao_perc: 0.54, min_52w: 88.00, max_52w: 140.20, volume: 85200 },
+            'KDIF11': { ticker: 'KDIF11', nome: 'Kinea Infra Debêntures Incentivadas IPCA', categoria: 'Debêntures Incentivadas', indexador: 'IDA-IPCA Infraestrutura', aliquota_ir: 'Isento de IR (Pessoa Física)', preco: 120.00, variacao_perc: 1.35, min_52w: 102.50, max_52w: 122.00, volume: 15430 },
+            'DEBB11': { ticker: 'DEBB11', nome: 'BTG Pactual Debêntures DI / Crédito Privado', categoria: 'Crédito Privado / DI', indexador: 'IDA-DI', aliquota_ir: '15% fixo', preco: 17.22, variacao_perc: 0.00, min_52w: 15.10, max_52w: 17.80, volume: 32000 },
+            'LFTS11': { ticker: 'LFTS11', nome: 'Investo Teva Tesouro Selic (LFT Pós-Fixado)', categoria: 'Renda Fixa Pós-Fixado', indexador: '100% Taxa Selic', aliquota_ir: '15% fixo (sem come-cotas)', preco: 161.21, variacao_perc: 0.05, min_52w: 141.12, max_52w: 161.24, volume: 196753 },
+            'FIXA11': { ticker: 'FIXA11', nome: 'BB ETF Renda Fixa Pré DI Futuro', categoria: 'Renda Fixa Prefixado', indexador: 'S&P/B3 Taxas DI Futuro', aliquota_ir: '15% fixo', preco: 20.88, variacao_perc: 0.34, min_52w: 12.30, max_52w: 20.88, volume: 8264 },
+            'IRFM11': { ticker: 'IRFM11', nome: 'It Now IRF-M (Títulos Públicos Prefixados LTN/NTN-F)', categoria: 'Renda Fixa Prefixado', indexador: 'IRF-M Geral', aliquota_ir: '15% fixo', preco: 109.85, variacao_perc: 0.41, min_52w: 92.40, max_52w: 112.50, volume: 22100 },
+            'USDB11': { ticker: 'USDB11', nome: 'Investo US T-Bills (Tesouro Americano Curto em BRL)', categoria: 'Renda Fixa Global', indexador: 'US Treasury Bills + USD', aliquota_ir: '15% fixo', preco: 93.40, variacao_perc: -0.87, min_52w: 80.10, max_52w: 99.80, volume: 18450 },
+            'BOVA11': { ticker: 'BOVA11', nome: 'iShares Ibovespa Fundo de Índice', categoria: 'Ações Brasil', indexador: 'Índice Bovespa (IBOV)', aliquota_ir: '15% no ganho de capital', preco: 205.55, variacao_perc: 1.22, min_52w: 168.00, max_52w: 215.00, volume: 4500000 },
+            'SMAL11': { ticker: 'SMAL11', nome: 'iShares Small Cap Fundo de Índice', categoria: 'Ações Small Caps', indexador: 'Índice Small Cap (SMLL)', aliquota_ir: '15% no ganho de capital', preco: 139.80, variacao_perc: 4.03, min_52w: 105.00, max_52w: 145.00, volume: 890000 },
+            'IVVB11': { ticker: 'IVVB11', nome: 'iShares S&P 500 Fundo de Índice', categoria: 'Ações Internacionais', indexador: 'S&P 500 em Reais', aliquota_ir: '15% no ganho de capital', preco: 439.25, variacao_perc: -0.25, min_52w: 310.00, max_52w: 445.00, volume: 1250000 }
         },
         tesouro_b3: {
-            tesouro_ipca: { titulo: 'Tesouro IPCA+ 2029', taxa_anual: 6.62 }
+            tesouro_ipca: { titulo: 'Tesouro IPCA+ 2029', taxa_anual: 6.62 },
+            tesouro_selic: { titulo: 'Tesouro Selic 2029', taxa_agio: 0.05 },
+            titulos_detalhados: [
+                { titulo: 'Tesouro Selic 2027', tipo: 'Tesouro Selic', vencimento: '01/03/2027', taxa_compra: 0.01, pu_compra: 20067.61 },
+                { titulo: 'Tesouro Selic 2029', tipo: 'Tesouro Selic', vencimento: '01/03/2029', taxa_compra: 0.05, pu_compra: 20046.46 },
+                { titulo: 'Tesouro IPCA+ 2029', tipo: 'Tesouro IPCA+', vencimento: '15/05/2029', taxa_compra: 6.62, pu_compra: 4042.91 },
+                { titulo: 'Tesouro IPCA+ 2035', tipo: 'Tesouro IPCA+', vencimento: '15/05/2035', taxa_compra: 6.65, pu_compra: 4698.46 },
+                { titulo: 'Tesouro Prefixado 2028', tipo: 'Tesouro Prefixado', vencimento: '01/01/2028', taxa_compra: 12.49, pu_compra: 866.82 },
+                { titulo: 'Tesouro Prefixado 2031', tipo: 'Tesouro Prefixado', vencimento: '01/01/2031', taxa_compra: 12.45, pu_compra: 611.86 }
+            ]
         }
     };
     dadosB3Cache = fallbackB3;
@@ -254,6 +300,33 @@ function renderB3FallbackDefault() {
     if (apiStatusText) {
         apiStatusText.innerHTML = `<span class="text-primary fw-bold"><i class="bi bi-check-circle-fill"></i> B3 & BrasilAPI Operacionais</span>`;
     }
+}
+
+// Retorna Badge de Categoria Formatado
+function getCategoryBadge(categoria) {
+    if (!categoria) return `<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25">ETF</span>`;
+    if (categoria.includes('IPCA')) {
+        return `<span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 fw-bold px-2 py-1"><i class="bi bi-graph-up-arrow me-1"></i>${categoria}</span>`;
+    }
+    if (categoria.includes('Pós-Fixado') || categoria.includes('Selic')) {
+        return `<span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 fw-bold px-2 py-1"><i class="bi bi-cash-coin me-1"></i>${categoria}</span>`;
+    }
+    if (categoria.includes('Debêntures') || categoria.includes('Incentivadas')) {
+        return `<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 fw-bold px-2 py-1"><i class="bi bi-shield-check me-1"></i>${categoria}</span>`;
+    }
+    if (categoria.includes('Crédito Privado')) {
+        return `<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 fw-bold px-2 py-1"><i class="bi bi-safe me-1"></i>${categoria}</span>`;
+    }
+    if (categoria.includes('Prefixado') || categoria.includes('Pré')) {
+        return `<span class="badge bg-warning bg-opacity-10 text-dark border border-warning border-opacity-25 fw-bold px-2 py-1"><i class="bi bi-calendar-check me-1"></i>${categoria}</span>`;
+    }
+    if (categoria.includes('Global')) {
+        return `<span class="badge bg-dark bg-opacity-10 text-dark border border-dark border-opacity-25 fw-bold px-2 py-1"><i class="bi bi-globe me-1"></i>${categoria}</span>`;
+    }
+    if (categoria.includes('Ações') || categoria.includes('Small') || categoria.includes('Internacionais')) {
+        return `<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 fw-bold px-2 py-1"><i class="bi bi-bar-chart-fill me-1"></i>${categoria}</span>`;
+    }
+    return `<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 fw-bold px-2 py-1">${categoria}</span>`;
 }
 
 // Renderiza Ticker de Cotações B3 na Barra Superior
@@ -268,7 +341,7 @@ function renderB3TickerBar(dataB3) {
         const icon = isPos ? 'bi-caret-up-fill' : 'bi-caret-down-fill';
 
         html += `
-        <div class="ticker-badge" title="${item.nome} - Cotação oficial na B3">
+        <div class="ticker-badge" title="${item.nome} (${item.categoria || 'ETF B3'})">
             <strong class="text-dark">${ticker}:</strong>
             <span class="fw-bold text-primary">${formatMoney(item.preco)}</span>
             <span class="${colorClass} small fw-bold">
@@ -278,43 +351,164 @@ function renderB3TickerBar(dataB3) {
         `;
     }
 
-    if (dataB3.tesouro_b3 && dataB3.tesouro_b3.tesouro_ipca) {
-        html += `
-        <div class="ticker-badge" title="Taxa real oficial de compra do Tesouro IPCA+ negociada na B3">
-            <strong class="text-warning-emphasis"><i class="bi bi-bank2 me-1"></i>${dataB3.tesouro_b3.tesouro_ipca.titulo}:</strong>
-            <span class="text-dark fw-bold">IPCA + ${dataB3.tesouro_b3.tesouro_ipca.taxa_anual.toFixed(2)}% a.a.</span>
-        </div>
-        `;
+    if (dataB3.tesouro_b3) {
+        if (dataB3.tesouro_b3.tesouro_ipca) {
+            html += `
+            <div class="ticker-badge" title="Taxa real oficial de compra do Tesouro IPCA+">
+                <strong class="text-warning-emphasis"><i class="bi bi-bank2 me-1"></i>${dataB3.tesouro_b3.tesouro_ipca.titulo}:</strong>
+                <span class="text-dark fw-bold">IPCA + ${dataB3.tesouro_b3.tesouro_ipca.taxa_anual.toFixed(2)}% a.a.</span>
+            </div>
+            `;
+        }
+        if (dataB3.tesouro_b3.tesouro_selic) {
+            html += `
+            <div class="ticker-badge" title="Taxa oficial do Tesouro Selic">
+                <strong class="text-warning-emphasis"><i class="bi bi-bank2 me-1"></i>${dataB3.tesouro_b3.tesouro_selic.titulo}:</strong>
+                <span class="text-dark fw-bold">Selic + ${Number(dataB3.tesouro_b3.tesouro_selic.taxa_agio || 0).toFixed(2)}%</span>
+            </div>
+            `;
+        }
     }
 
     container.innerHTML = html;
 }
 
-// Renderiza Painel / Tabela de Mercado B3
+// Renderiza Painel / Tabela de Mercado B3 Completa com Todos os ETFs
 function renderB3MarketTable(dataB3) {
     const tbody = document.getElementById('tbody-mercado-b3');
-    if (!tbody || !dataB3.etfs) return;
+    if (!tbody || !dataB3) return;
 
-    let html = '';
-    for (const [ticker, item] of Object.entries(dataB3.etfs)) {
+    const etfs = dataB3.etfs || {};
+    const tesouroTitulos = (dataB3.tesouro_b3 && dataB3.tesouro_b3.titulos_detalhados) ? dataB3.tesouro_b3.titulos_detalhados : [];
+
+    const termo = buscaMercadoTermo.toLowerCase().trim();
+    let itensHtml = '';
+    let totalFiltrados = 0;
+    const totalEtfs = Object.keys(etfs).length;
+
+    // 1. Renderizar ETFs
+    for (const [ticker, item] of Object.entries(etfs)) {
+        const cat = item.categoria || '';
+        const isRf = cat.includes('Renda Fixa') || cat.includes('Debêntures') || cat.includes('Crédito') || cat.includes('Global');
+        const isAcoes = cat.includes('Ações') || cat.includes('Small') || cat.includes('Internacionais');
+
+        // Filtro de Categoria
+        if (filtroMercadoAtual === 'tesouro') continue;
+        if (filtroMercadoAtual === 'etf_rf' && !isRf) continue;
+        if (filtroMercadoAtual === 'etf_acoes' && !isAcoes) continue;
+
+        // Filtro de Busca
+        if (termo) {
+            const matchTicker = ticker.toLowerCase().includes(termo);
+            const matchNome = (item.nome || '').toLowerCase().includes(termo);
+            const matchCat = cat.toLowerCase().includes(termo);
+            const matchIndex = (item.indexador || '').toLowerCase().includes(termo);
+            if (!matchTicker && !matchNome && !matchCat && !matchIndex) continue;
+        }
+
+        totalFiltrados++;
         const isPos = item.variacao_perc >= 0;
         const colorClass = isPos ? 'text-success' : 'text-danger';
+        const icon = isPos ? 'bi-caret-up-fill' : 'bi-caret-down-fill';
 
-        html += `
+        itensHtml += `
         <tr>
             <td>
-                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 fw-bold me-2 px-2 py-1">${ticker}</span>
-                <span class="text-dark fw-bold">${item.nome}</span>
+                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 fw-bold px-2 py-1 fs-7">
+                    <i class="bi bi-tag-fill me-1"></i>${ticker}
+                </span>
             </td>
+            <td>
+                <div class="text-dark fw-bold">${item.nome}</div>
+                <small class="text-muted fw-semibold">${item.indexador ? 'Índice: ' + item.indexador : 'Fundo de Índice B3'}</small>
+            </td>
+            <td>${getCategoryBadge(cat)}</td>
             <td class="text-dark fw-bold fs-6">${formatMoney(item.preco)}</td>
-            <td class="${colorClass} fw-bold">${item.variacao_perc > 0 ? '+' : ''}${item.variacao_perc.toFixed(2)}%</td>
-            <td class="text-muted fw-semibold small">${item.min_52w > 0 ? formatMoney(item.min_52w) + ' - ' + formatMoney(item.max_52w) : '-'}</td>
-            <td class="text-muted fw-semibold small">${item.volume ? Number(item.volume).toLocaleString('pt-BR') : '-'}</td>
+            <td class="${colorClass} fw-bold">
+                <i class="bi ${icon}"></i> ${item.variacao_perc > 0 ? '+' : ''}${item.variacao_perc.toFixed(2)}%
+            </td>
+            <td class="text-muted fw-semibold small">
+                ${item.min_52w > 0 ? `${formatMoney(item.min_52w)} <span class="text-secondary opacity-50">–</span> ${formatMoney(item.max_52w)}` : '–'}
+            </td>
+            <td class="text-muted fw-semibold small">
+                ${item.volume ? Number(item.volume).toLocaleString('pt-BR') + ' cotas' : '–'}
+            </td>
+            <td>
+                <span class="badge ${item.aliquota_ir && item.aliquota_ir.includes('Isento') ? 'bg-success bg-opacity-10 text-success border-success' : 'bg-secondary bg-opacity-10 text-dark border-secondary'} border border-opacity-25 small">
+                    ${item.aliquota_ir || '15% Fixo'}
+                </span>
+            </td>
         </tr>
         `;
     }
 
-    tbody.innerHTML = html;
+    // 2. Renderizar Títulos do Tesouro Direto
+    if (filtroMercadoAtual === 'todos' || filtroMercadoAtual === 'tesouro') {
+        for (const tit of tesouroTitulos) {
+            if (termo) {
+                const matchTitulo = (tit.titulo || '').toLowerCase().includes(termo);
+                const matchTipo = (tit.tipo || '').toLowerCase().includes(termo);
+                if (!matchTitulo && !matchTipo && !'tesouro'.includes(termo)) continue;
+            }
+
+            totalFiltrados++;
+            const tdTaxa = tit.taxa_compra !== undefined ? tit.taxa_compra : (tit.taxa_anual || tit.taxa_agio || 0);
+            const tdTaxaFormatada = (tit.tipo && tit.tipo.includes('Selic'))
+                ? `Selic + ${tdTaxa.toFixed(2)}%`
+                : ((tit.tipo && tit.tipo.includes('IPCA')) ? `IPCA + ${tdTaxa.toFixed(2)}%` : `${tdTaxa.toFixed(2)}% a.a.`);
+
+            itensHtml += `
+            <tr class="table-light-subtle">
+                <td>
+                    <span class="badge bg-warning bg-opacity-15 text-dark border border-warning border-opacity-50 fw-bold px-2 py-1 fs-7">
+                        <i class="bi bi-bank2 me-1"></i>TD
+                    </span>
+                </td>
+                <td>
+                    <div class="text-dark fw-bold">${tit.titulo}</div>
+                    <small class="text-muted fw-semibold">${tit.vencimento ? 'Vencimento: ' + tit.vencimento : 'Título Público Federal'}</small>
+                </td>
+                <td>
+                    <span class="badge bg-warning bg-opacity-10 text-dark border border-warning border-opacity-25 fw-bold px-2 py-1">
+                        <i class="bi bi-shield-fill-check me-1"></i>Tesouro Direto
+                    </span>
+                </td>
+                <td class="text-dark fw-bold fs-6">
+                    <div>${formatMoney(tit.pu_compra)}</div>
+                    <small class="text-primary fw-semibold" style="font-size:0.75rem;">Taxa: ${tdTaxaFormatada}</small>
+                </td>
+                <td class="text-success fw-bold">
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25"><i class="bi bi-shield-check me-1"></i>Soberano</span>
+                </td>
+                <td class="text-muted fw-semibold small">Garantido pelo Tesouro</td>
+                <td class="text-muted fw-semibold small">Mercado Primário / B3</td>
+                <td>
+                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 small" title="22,5% (até 180d) a 15% (> 720d)">
+                        Regressivo (22,5% a 15%)
+                    </span>
+                </td>
+            </tr>
+            `;
+        }
+    }
+
+    if (totalFiltrados === 0) {
+        tbody.innerHTML = `
+        <tr>
+            <td colspan="8" class="text-center text-muted py-4">
+                <i class="bi bi-search me-2"></i>Nenhum ativo encontrado para <strong>"${buscaMercadoTermo}"</strong>. Tente outro termo ou limpe os filtros.
+            </td>
+        </tr>
+        `;
+    } else {
+        tbody.innerHTML = itensHtml;
+    }
+
+    // Atualizar Badge de Total
+    const badgeTotal = document.getElementById('badge-total-etfs');
+    if (badgeTotal) {
+        badgeTotal.innerHTML = `<i class="bi bi-collection-fill me-1"></i> ${totalFiltrados} Ativos exibidos (${totalEtfs} ETFs B3)`;
+    }
 }
 
 // Motor de Cálculo Client-Side para Vercel Serverless Fallback

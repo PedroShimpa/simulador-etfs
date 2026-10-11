@@ -235,28 +235,65 @@
                 <!-- Monitor de Mercado B3 em Tempo Real -->
                 <div class="glass-panel p-4 mb-4" id="monitor-b3">
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 pb-2 border-bottom border-secondary border-opacity-10">
-                        <h5 class="fw-bold text-dark mb-0">
-                            <i class="bi bi-activity text-primary me-2"></i>Monitor de Mercado B3: Cotações & Títulos Oficiais
-                        </h5>
-                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 fw-bold px-2 py-1">
-                            <i class="bi bi-check2-circle me-1"></i> Dados Oficiais B3 & Tesouro Nacional
-                        </span>
+                        <div>
+                            <h5 class="fw-bold text-dark mb-0">
+                                <i class="bi bi-activity text-primary me-2"></i>Monitor de Mercado B3: Cotações & Títulos Oficiais
+                            </h5>
+                            <small class="text-muted fw-semibold">Livro oficial de ofertas: Todos os ETFs listados na B3 e títulos do Tesouro Direto</small>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 fw-bold px-2 py-1" id="badge-total-etfs">
+                                <i class="bi bi-collection-fill me-1"></i> Todos os ETFs da B3
+                            </span>
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 fw-bold px-2 py-1">
+                                <i class="bi bi-check2-circle me-1"></i> Dados Oficiais B3
+                            </span>
+                        </div>
                     </div>
 
-                    <div class="table-responsive">
-                        <table class="table table-custom align-middle mb-0">
-                            <thead>
+                    <!-- Filtros Rápidos de Categoria e Busca -->
+                    <div class="row g-2 align-items-center mb-3">
+                        <div class="col-lg-8 col-md-7">
+                            <div class="d-flex gap-1 flex-wrap" id="filtros-mercado-container">
+                                <button type="button" class="btn btn-sm btn-quick-prazo active btn-filter-mercado" data-filtro="todos">
+                                    <i class="bi bi-grid-fill me-1"></i> Todos os Ativos
+                                </button>
+                                <button type="button" class="btn btn-sm btn-quick-prazo btn-filter-mercado" data-filtro="etf_rf">
+                                    <i class="bi bi-graph-up me-1"></i> ETFs Renda Fixa & Debêntures
+                                </button>
+                                <button type="button" class="btn btn-sm btn-quick-prazo btn-filter-mercado" data-filtro="etf_acoes">
+                                    <i class="bi bi-bar-chart-fill me-1"></i> ETFs Ações & Índices
+                                </button>
+                                <button type="button" class="btn btn-sm btn-quick-prazo btn-filter-mercado" data-filtro="tesouro">
+                                    <i class="bi bi-bank2 me-1"></i> Tesouro Direto
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-5">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                                <input type="text" class="form-control form-control-sm border-start-0" id="input-busca-mercado" placeholder="Filtrar por código ou nome...">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+                        <table class="table table-custom table-hover align-middle mb-0">
+                            <thead class="sticky-top shadow-sm">
                                 <tr>
-                                    <th>Ativo B3</th>
-                                    <th>Cotação / Preço Unitário</th>
-                                    <th>Variação do Dia</th>
+                                    <th>Código / Ticker</th>
+                                    <th>Nome / Descrição Oficial</th>
+                                    <th>Categoria</th>
+                                    <th>Cotação / PU</th>
+                                    <th>Variação</th>
                                     <th>Faixa 52 Semanas</th>
-                                    <th>Volume Negociado</th>
+                                    <th>Volume</th>
+                                    <th>Tributação</th>
                                 </tr>
                             </thead>
                             <tbody id="tbody-mercado-b3">
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted py-3">Carregando livro de cotações da B3...</td>
+                                    <td colspan="8" class="text-center text-muted py-4">Carregando livro completo de cotações da B3...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -447,6 +484,6 @@
     <!-- Scripts Bootstrap 5.3 & Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
-    <script src="assets/js/app.js?v=2.1.0"></script>
+    <script src="assets/js/app.js?v=2.2.0"></script>
 </body>
 </html>
