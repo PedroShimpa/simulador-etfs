@@ -923,11 +923,11 @@ function renderResults(data) {
     cardsContainer.innerHTML = html;
 }
 
-// Renderiza Gráficos Chart.js com Paleta de Alta Legibilidade
+// Renderiza Gráficos Chart.js com Paleta de Alta Legibilidade (Textos em Preto)
 function renderCharts(data) {
     const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-    const textColor = isDark ? '#9ca3af' : '#475569';
-    const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0';
+    const textColor = '#000000';
+    const gridColor = '#e2e8f0';
 
     const res = data.resultados;
     const labels = [];
@@ -946,7 +946,9 @@ function renderCharts(data) {
 
     const ctxEvolution = document.getElementById('chart-evolution');
     if (ctxEvolution) {
-        if (chartEvolutionInstance) chartEvolutionInstance.destroy();
+        const existingEvolution = Chart.getChart(ctxEvolution);
+        if (existingEvolution) existingEvolution.destroy();
+        else if (chartEvolutionInstance) chartEvolutionInstance.destroy();
 
         chartEvolutionInstance = new Chart(ctxEvolution, {
             type: 'line',
@@ -1009,7 +1011,7 @@ function renderCharts(data) {
                         label: 'Total Aportado',
                         data: datasetTotalAportado,
                         borderColor: '#94a3b8',
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+                        backgroundColor: 'rgba(0, 0, 0, 0.03)',
                         borderWidth: 1.5,
                         borderDash: [3, 3],
                         tension: 0,
@@ -1073,7 +1075,9 @@ function renderCharts(data) {
 
     const ctxCosts = document.getElementById('chart-costs');
     if (ctxCosts) {
-        if (chartCostsInstance) chartCostsInstance.destroy();
+        const existingCosts = Chart.getChart(ctxCosts);
+        if (existingCosts) existingCosts.destroy();
+        else if (chartCostsInstance) chartCostsInstance.destroy();
 
         const assetNames = ['ETF IPCA', 'Tesouro IPCA+', 'ETF LFTS11', 'CDB Caixinha', 'Tesouro Selic'];
         const keys = ['etf_ipca', 'tesouro_ipca', 'etf_selic', 'cdb_caixinha', 'tesouro_selic'];

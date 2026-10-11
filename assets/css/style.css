@@ -3,73 +3,46 @@
    Design System & Styling - Otimizado para Tema Claro (Alta Legibilidade)
    ========================================================================== */
 
-/* Tema Claro (Padrão) */
-:root, [data-bs-theme="light"] {
+/* Tema Claro e Padrão Universal - Todos os Textos Sempre em Preto (#000000) */
+:root, [data-bs-theme="light"], [data-bs-theme="dark"] {
   --bg-primary: #f8fafc;
   --bg-secondary: #ffffff;
   --bg-card: #ffffff;
   --bg-card-subtle: #f1f5f9;
-  --border-color: #e2e8f0;
+  --border-color: #cbd5e1;
   --border-glow: rgba(37, 99, 235, 0.15);
 
   --accent-etf: #2563eb;        /* Azul vibrante */
   --accent-tesouro: #d97706;    /* Âmbar / Ouro */
   --accent-cdb: #7c3aed;        /* Roxo / Violeta */
-  --accent-success: #059669;    /* Verde Esmeralda escuro legível */
+  --accent-success: #059669;    /* Verde Esmeralda */
   --accent-danger: #dc2626;     /* Vermelho */
   --accent-info: #0284c7;       /* Ciano escuro */
 
-  --text-main: #0f172a;         /* Slate 900 - Contraste máximo */
-  --text-heading: #020617;      /* Slate 950 */
-  --text-muted: #475569;        /* Slate 600 */
-  --text-dim: #64748b;          /* Slate 500 */
+  /* Textos sempre em Preto Absoluto (#000000) */
+  --text-main: #000000;
+  --text-heading: #000000;
+  --text-muted: #000000;
+  --text-dim: #000000;
+  --table-head-text: #000000;
+  --table-head-bg: #f1f5f9;
+  --table-row-hover: #e2e8f0;
+
+  --bs-body-color: #000000;
+  --bs-secondary-color: #000000;
+  --bs-tertiary-color: #000000;
+  --bs-heading-color: #000000;
 
   --card-radius: 16px;
   --btn-radius: 10px;
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
-  --shadow-card: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.02);
-  --shadow-hover: 0 20px 30px -8px rgba(15, 23, 42, 0.08);
+  --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+  --shadow-hover: 0 20px 30px -8px rgba(0, 0, 0, 0.08);
 
   --input-bg: #ffffff;
-  --input-border: #cbd5e1;
+  --input-border: #94a3b8;
   --ticker-bg: #ffffff;
-  --ticker-border: #e2e8f0;
-  --table-head-bg: #f8fafc;
-  --table-head-text: #334155;
-  --table-row-hover: #f1f5f9;
-}
-
-/* Tema Escuro (Opcional / Toggle) */
-[data-bs-theme="dark"] {
-  --bg-primary: #0b0f19;
-  --bg-secondary: #111827;
-  --bg-card: rgba(17, 24, 39, 0.85);
-  --bg-card-subtle: rgba(0, 0, 0, 0.25);
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-glow: rgba(59, 130, 246, 0.3);
-
-  --accent-etf: #3b82f6;
-  --accent-tesouro: #f59e0b;
-  --accent-cdb: #8b5cf6;
-  --accent-success: #10b981;
-  --accent-danger: #ef4444;
-  --accent-info: #06b6d4;
-
-  --text-main: #f3f4f6;
-  --text-heading: #ffffff;
-  --text-muted: #9ca3af;
-  --text-dim: #6b7280;
-
-  --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-  --shadow-hover: 0 20px 35px -10px rgba(0, 0, 0, 0.7);
-
-  --input-bg: rgba(17, 24, 39, 0.6);
-  --input-border: rgba(255, 255, 255, 0.12);
-  --ticker-bg: rgba(255, 255, 255, 0.04);
-  --ticker-border: rgba(255, 255, 255, 0.08);
-  --table-head-bg: rgba(255, 255, 255, 0.03);
-  --table-head-text: #9ca3af;
-  --table-row-hover: rgba(255, 255, 255, 0.03);
+  --ticker-border: #cbd5e1;
 }
 
 body {
@@ -414,4 +387,104 @@ footer {
   position: relative;
   min-height: 380px;
   width: 100%;
+}
+
+/* ==========================================================================
+   ALTA LEGIBILIDADE OBRIGATÓRIA: TODOS OS TEXTOS SEMPRE EM PRETO (#000000)
+   ========================================================================== */
+body,
+h1, h2, h3, h4, h5, h6,
+p,
+div:not(.winner-badge):not(.brand-badge):not(.btn-simulate),
+label,
+small,
+strong,
+b,
+span:not(.winner-badge):not(.brand-badge):not(.btn-simulate *):not(.active *):not(.badge-solid-contrast),
+th,
+td,
+input,
+select,
+textarea,
+footer,
+footer *,
+.text-muted,
+.text-secondary,
+.text-dim,
+.form-label-custom,
+.input-group-text,
+.form-control,
+.form-control-custom,
+.form-select,
+.form-select-custom,
+.table-custom,
+.table-custom th,
+.table-custom td,
+.feature-box,
+.feature-box p,
+.feature-box small,
+.feature-box div,
+.feature-box h6,
+.accordion-button,
+.accordion-body,
+.nav-pills-custom .nav-link:not(.active),
+.btn-quick-prazo:not(.active),
+.btn-filter-mercado:not(.active),
+.ticker-badge,
+.ticker-badge *,
+.metric-highlight-box,
+.metric-highlight-box small,
+.metric-highlight-box div,
+.asset-card small,
+.asset-value-highlight,
+.navbar-brand,
+.card-header,
+.card-body {
+  color: #000000 !important;
+  opacity: 1 !important;
+}
+
+/* Forçar contraste máximo em classes utilitárias de texto cinza */
+.text-muted, [class*="text-muted"], .text-secondary, [class*="text-secondary"], .text-dark {
+  color: #000000 !important;
+  opacity: 1 !important;
+}
+
+/* Badges com fundo suave/transparente: texto em preto absoluto */
+.badge.bg-opacity-10,
+.badge.bg-opacity-15,
+.badge.bg-opacity-20,
+.badge.bg-opacity-25,
+.badge.border,
+.badge.bg-light,
+.badge.bg-warning,
+.badge.bg-info {
+  color: #000000 !important;
+  font-weight: 700;
+}
+
+/* Textos em tabelas */
+.table-custom th {
+  color: #000000 !important;
+  font-weight: 800;
+}
+
+.table-custom td {
+  color: #000000 !important;
+  font-weight: 600;
+}
+
+/* Preservar texto branco em botões com preenchimento escuro/sólido para legibilidade */
+.btn-simulate,
+.btn-simulate *,
+.btn-quick-prazo.active,
+.btn-filter-mercado.active,
+.nav-pills-custom .nav-link.active,
+.winner-badge,
+.winner-badge *,
+.brand-badge,
+.badge.bg-success.text-white,
+.badge.bg-primary:not(.bg-opacity-10),
+.badge.bg-danger:not(.bg-opacity-10) {
+  color: #ffffff !important;
 }
