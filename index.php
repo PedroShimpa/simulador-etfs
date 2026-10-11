@@ -1,0 +1,477 @@
+<?php
+/**
+ * Simulador de Renda Fixa, ETFs e Caixinhas
+ * Projeto Open Source criado por Pedro Falconi
+ * Integrado com B3 (Brasil, Bolsa, Balcão) & BrasilAPI
+ */
+
+$cacheFile = __DIR__ . '/cache_taxas.json';
+$cacheB3File = __DIR__ . '/cache_b3.json';
+
+$taxasIniciais = [
+    'selic' => 13.75,
+    'cdi'   => 13.65,
+    'ipca'  => 4.58,
+    'atualizado_em' => date('d/m/Y')
+];
+
+if (file_exists($cacheFile)) {
+    $conteudo = json_decode(file_get_contents($cacheFile), true);
+    if ($conteudo && isset($conteudo['selic'])) {
+        $taxasIniciais = $conteudo;
+    }
+}
+
+$dadosB3Iniciais = null;
+if (file_exists($cacheB3File)) {
+    $dadosB3Iniciais = json_decode(file_get_contents($cacheB3File), true);
+}
+?>
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Renda Fixa & ETFs - Pedro Falconi (Open Source)</title>
+    
+    <!-- Meta SEO Tags -->
+    <meta name="description" content="Simulador de mercado financeiro com dados em tempo real da B3 e BrasilAPI. Compare ETFs de renda fixa (B5P211, LFTS11, IMAB11), Tesouro Direto e CDBs de caixinhas. Projeto open source criado por Pedro Falconi.">
+    <meta name="author" content="Pedro Falconi">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Google Fonts (Plus Jakarta Sans) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5.3 & Icons CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+    <!-- Header / Navbar Principal -->
+    <nav class="navbar navbar-custom py-3 sticky-top">
+        <div class="container-fluid px-lg-5">
+            <div class="d-flex align-items-center gap-3">
+                <div class="feature-icon-wrapper mb-0" style="background: linear-gradient(135deg, #2563eb, #10b981); color: white;">
+                    <i class="bi bi-graph-up-arrow fs-5"></i>
+                </div>
+                <div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="navbar-brand fw-bold text-white mb-0 fs-5">Simulador de Renda Fixa & ETFs</span>
+                        <span class="brand-badge d-none d-sm-inline-block">Open Source</span>
+                    </div>
+                    <small class="text-muted d-block" style="font-size: 0.78rem;">
+                        Comparador Otimizado com Dados Reais da B3 e BrasilAPI
+                    </small>
+                </div>
+            </div>
+
+            <!-- Badges BrasilAPI & B3 em Tempo Real -->
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0 flex-wrap">
+                <div class="ticker-badge" title="Taxa Selic oficial">
+                    <span class="pulse-dot"></span>
+                    <span class="text-muted small">SELIC:</span>
+                    <strong class="text-white" id="badge-selic-val"><?= number_format($taxasIniciais['selic'], 2, ',', '.') ?>% a.a.</strong>
+                </div>
+
+                <div class="ticker-badge" title="Taxa CDI oficial">
+                    <span class="text-muted small">CDI:</span>
+                    <strong class="text-white" id="badge-cdi-val"><?= number_format($taxasIniciais['cdi'], 2, ',', '.') ?>% a.a.</strong>
+                </div>
+
+                <div class="ticker-badge" title="Inflação IPCA acumulada">
+                    <span class="text-muted small">IPCA:</span>
+                    <strong class="text-white" id="badge-ipca-val"><?= number_format($taxasIniciais['ipca'], 2, ',', '.') ?>% a.a.</strong>
+                </div>
+
+                <button class="btn btn-sm btn-outline-secondary rounded-circle ms-1" id="btn-reload-taxas" title="Atualizar dados oficiais da B3 e BrasilAPI">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Barra de Cotações da B3 em Tempo Real (Market Ticker) -->
+    <section class="border-bottom border-white border-opacity-10 py-2" style="background: rgba(0, 0, 0, 0.35);">
+        <div class="container-fluid px-lg-5">
+            <div class="d-flex align-items-center gap-3 overflow-x-auto py-1" id="b3-ticker-stream" style="white-space: nowrap;">
+                <div class="small text-muted fw-bold text-uppercase d-flex align-items-center gap-1">
+                    <i class="bi bi-broadcast text-danger"></i> B3 Market Data:
+                </div>
+                <!-- Preenchido via app.js -->
+                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                <span class="small text-muted">Carregando cotações oficiais dos ETFs na B3...</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Hero / Apresentação do Projeto Open Source -->
+    <header class="container-fluid px-lg-5 pt-4 pb-2">
+        <div class="row align-items-center justify-content-between g-3">
+            <div class="col-lg-8">
+                <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-2" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.25);">
+                    <i class="bi bi-code-slash text-primary"></i>
+                    <span class="small text-primary fw-semibold">Projeto Open Source criado por Pedro Falconi</span>
+                </div>
+                <h1 class="display-6 fw-bold text-white mb-2">
+                    Simulador Financeiro com Cotações e Taxas Reais da B3
+                </h1>
+                <p class="text-muted mb-0" style="max-width: 860px;">
+                    Calcule seus rendimentos em longo prazo com <strong>cotações reais dos ETFs na B3</strong> (B5P211, LFTS11, IMAB11) e taxas oficiais do <strong>Tesouro Direto</strong>. Compare a alíquota fixa de 15% de IR contra o imposto regressivo dos CDBs e títulos públicos.
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <button type="button" class="btn btn-outline-light rounded-pill px-4 py-2 small fw-semibold" onclick="copiarResumoSimulacao()">
+                    <i class="bi bi-share-fill me-2"></i> Compartilhar / Copiar Resumo
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container-fluid px-lg-5 py-4">
+        <div class="row g-4">
+            
+            <!-- Painel Esquerdo: Parâmetros de Simulação -->
+            <div class="col-xl-4 col-lg-5">
+                <div class="glass-panel p-4 sticky-lg-top" style="top: 130px; z-index: 10;">
+                    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom border-white border-opacity-10">
+                        <h5 class="fw-bold text-white mb-0">
+                            <i class="bi bi-sliders2-vertical text-primary me-2"></i>Parâmetros do Investimento
+                        </h5>
+                        <div id="api-status-text" class="small"></div>
+                    </div>
+
+                    <form id="simulation-form">
+                        <!-- Aporte Inicial -->
+                        <div class="mb-3">
+                            <label for="input-aporte-inicial" class="form-label-custom">Aporte Inicial (R$)</label>
+                            <div class="input-group input-group-custom">
+                                <span class="input-group-text">R$</span>
+                                <input type="number" step="100" min="0" class="form-control form-control-custom" id="input-aporte-inicial" value="10000" required>
+                            </div>
+                            <small class="text-dim">Patrimônio inicial a ser alocado</small>
+                        </div>
+
+                        <!-- Aporte Mensal -->
+                        <div class="mb-3">
+                            <label for="input-aporte-mensal" class="form-label-custom">Aporte Mensal Recorrente (R$)</label>
+                            <div class="input-group input-group-custom">
+                                <span class="input-group-text">R$</span>
+                                <input type="number" step="50" min="0" class="form-control form-control-custom" id="input-aporte-mensal" value="1000" required>
+                            </div>
+                            <small class="text-dim">Investimento recorrente todo mês</small>
+                        </div>
+
+                        <!-- Prazo em Anos -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label for="input-prazo-anos" class="form-label-custom mb-0">Prazo de Acumulação</label>
+                                <span class="badge bg-primary bg-opacity-20 text-primary fw-bold" id="badge-prazo-info">Anos e Meses</span>
+                            </div>
+                            <div class="input-group input-group-custom mb-2">
+                                <input type="number" step="1" min="1" max="50" class="form-control form-control-custom" id="input-prazo-anos" value="10">
+                                <span class="input-group-text">Anos</span>
+                                <input type="hidden" id="input-prazo-meses" value="120">
+                            </div>
+
+                            <!-- Atalhos rápidos de prazo -->
+                            <div class="d-flex gap-1 flex-wrap">
+                                <button type="button" class="btn btn-quick-prazo" data-anos="1">1 ano</button>
+                                <button type="button" class="btn btn-quick-prazo" data-anos="2">2 anos</button>
+                                <button type="button" class="btn btn-quick-prazo" data-anos="5">5 anos</button>
+                                <button type="button" class="btn btn-quick-prazo active" data-anos="10">10 anos</button>
+                                <button type="button" class="btn btn-quick-prazo" data-anos="20">20 anos</button>
+                                <button type="button" class="btn btn-quick-prazo" data-anos="30">30 anos</button>
+                            </div>
+                        </div>
+
+                        <!-- Accordion Parâmetros Avançados (B3 + BrasilAPI) -->
+                        <div class="accordion accordion-flush mb-4" id="accordionMacro">
+                            <div class="accordion-item bg-transparent border border-white border-opacity-10 rounded-3 overflow-hidden">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed bg-transparent text-white shadow-none py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMacro">
+                                        <i class="bi bi-cpu text-info me-2"></i> Taxas Reais B3 & BrasilAPI
+                                    </button>
+                                </h2>
+                                <div id="collapseMacro" class="accordion-collapse collapse" data-bs-parent="#accordionMacro">
+                                    <div class="accordion-body pt-2 pb-3" style="background: rgba(0,0,0,0.2);">
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-6">
+                                                <label for="input-taxa-selic" class="form-label-custom small">SELIC (% a.a.)</label>
+                                                <input type="number" step="0.05" class="form-control form-control-custom py-1" id="input-taxa-selic" value="<?= $taxasIniciais['selic'] ?>">
+                                            </div>
+                                            <div class="col-6">
+                                                <label for="input-taxa-cdi" class="form-label-custom small">CDI (% a.a.)</label>
+                                                <input type="number" step="0.05" class="form-control form-control-custom py-1" id="input-taxa-cdi" value="<?= $taxasIniciais['cdi'] ?>">
+                                            </div>
+                                            <div class="col-6">
+                                                <label for="input-taxa-ipca" class="form-label-custom small">IPCA (% a.a.)</label>
+                                                <input type="number" step="0.05" class="form-control form-control-custom py-1" id="input-taxa-ipca" value="<?= $taxasIniciais['ipca'] ?>">
+                                            </div>
+                                            <div class="col-6">
+                                                <label for="input-juro-real-ipca" class="form-label-custom small" title="Taxa real oficial do Tesouro IPCA+ na B3">Juro Real B3 (%)</label>
+                                                <input type="number" step="0.05" class="form-control form-control-custom py-1" id="input-juro-real-ipca" value="6.62">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-1">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <label class="form-label-custom small mb-0">% CDI da Caixinha</label>
+                                                <span class="text-white fw-bold small" id="label-cdi-caixinha">100%</span>
+                                            </div>
+                                            <input type="range" class="form-range" id="slider-cdi-caixinha" min="90" max="130" step="5" value="100">
+                                            <small class="text-muted" style="font-size: 0.72rem;">Ex: 100% (Nubank/Inter) a 110% (Promoções PicPay/C6)</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botão Ação -->
+                        <button type="submit" class="btn btn-simulate w-100" id="btn-simular">
+                            <i class="bi bi-play-circle-fill me-2"></i>Calcular Projeção
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Painel Direito: Resultados, Cards, Monitor B3, Gráficos e Tabela -->
+            <div class="col-xl-8 col-lg-7">
+                
+                <!-- Cards Comparativos com Ranking -->
+                <div class="row g-3" id="cards-container">
+                    <div class="col-12 text-center py-5">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="text-muted mt-2">Sincronizando dados com a B3 e BrasilAPI...</p>
+                    </div>
+                </div>
+
+                <!-- Card de Insights Dinâmicos -->
+                <div class="glass-panel p-4 mb-4" id="insights-container">
+                    <!-- Preenchido via app.js -->
+                </div>
+
+                <!-- NOVO: Monitor de Mercado B3 em Tempo Real -->
+                <div class="glass-panel p-4 mb-4" id="monitor-b3">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 pb-2 border-bottom border-white border-opacity-10">
+                        <h5 class="fw-bold text-white mb-0">
+                            <i class="bi bi-activity text-info me-2"></i>Monitor de Mercado B3: Cotações & Títulos Oficiais
+                        </h5>
+                        <span class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-25">
+                            <i class="bi bi-check2-circle me-1"></i> Dados Oficiais B3 & Tesouro Nacional
+                        </span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-custom align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Ativo B3</th>
+                                    <th>Cotação / Preço Unitário</th>
+                                    <th>Variação do Dia</th>
+                                    <th>Faixa 52 Semanas</th>
+                                    <th>Volume Negociado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-mercado-b3">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-3">Carregando livro de cotações da B3...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Abas de Visualização (Evolução / Custos / Tabela) -->
+                <div class="glass-panel p-4 mb-4">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4 pb-3 border-bottom border-white border-opacity-10">
+                        <h5 class="fw-bold text-white mb-0">
+                            <i class="bi bi-bar-chart-line text-success me-2"></i>Análise Comparativa Detalhada
+                        </h5>
+                        <ul class="nav nav-pills nav-pills-custom" id="pills-tab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="tab-grafico-link" data-bs-toggle="pill" data-bs-target="#tab-grafico" type="button" role="tab">
+                                    <i class="bi bi-graph-up me-1"></i> Evolução Patrimonial
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="tab-custos-link" data-bs-toggle="pill" data-bs-target="#tab-custos" type="button" role="tab">
+                                    <i class="bi bi-pie-chart me-1"></i> Custos & Impostos
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="tab-tabela-link" data-bs-toggle="pill" data-bs-target="#tab-tabela" type="button" role="tab">
+                                    <i class="bi bi-table me-1"></i> Tabela Ano a Ano
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="tab-content" id="pills-tabContent">
+                        <!-- Aba 1: Gráfico de Evolução -->
+                        <div class="tab-pane fade show active" id="tab-grafico" role="tabpanel">
+                            <div class="chart-container-box">
+                                <canvas id="chart-evolution"></canvas>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top border-white border-opacity-10 small text-muted">
+                                <span>* Patrimônio líquido após dedução de IR e custos.</span>
+                                <span>Fontes de Dados: B3 &bull; Tesouro Direto &bull; BrasilAPI</span>
+                            </div>
+                        </div>
+
+                        <!-- Aba 2: Gráfico de Custos e Impostos -->
+                        <div class="tab-pane fade" id="tab-custos" role="tabpanel">
+                            <div class="chart-container-box">
+                                <canvas id="chart-costs"></canvas>
+                            </div>
+                            <div class="mt-3 p-3 rounded-3" style="background: rgba(0,0,0,0.25);">
+                                <small class="text-muted d-block">
+                                    <strong>Custódia B3 de 0,20% a.a.:</strong> Cobrada no Tesouro Direto. Os ETFs de Renda Fixa da B3 (B5P211, LFTS11, IMAB11) não pagam taxa de custódia à B3, gerando uma poupança cumulativa expressiva no longo prazo.
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Aba 3: Tabela Detalhada Ano a Ano -->
+                        <div class="tab-pane fade" id="tab-tabela" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-custom align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Período</th>
+                                            <th>Total Aportado</th>
+                                            <th>ETF IPCA (Líq.)</th>
+                                            <th>Tesouro IPCA+</th>
+                                            <th>ETF Selic (LFTS11)</th>
+                                            <th>CDB Caixinha</th>
+                                            <th>Tesouro Selic</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="table-evolution-body">
+                                        <!-- Preenchido via app.js -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção Didática: Guia do Investidor -->
+                <div class="glass-panel p-4" id="guia-didatico">
+                    <h5 class="fw-bold text-white mb-3">
+                        <i class="bi bi-mortarboard-fill text-primary me-2"></i>Guia Prático: Como escolher entre ETF, Tesouro e Caixinhas?
+                    </h5>
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="feature-box">
+                                <div class="feature-icon-wrapper" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;">
+                                    <i class="bi bi-graph-up-arrow"></i>
+                                </div>
+                                <h6 class="fw-bold text-white mb-2">ETFs de Renda Fixa (B3)</h6>
+                                <p class="text-muted small mb-2">
+                                    Exemplos: <strong>B5P211</strong>, <strong>IMAB11</strong>, <strong>LFTS11</strong>.
+                                </p>
+                                <ul class="text-muted small ps-3 mb-0">
+                                    <li>Alíquota única de <strong>15% de IR</strong> independente do tempo de cada aporte.</li>
+                                    <li><strong>Sem come-cotas</strong> e sem taxa de 0,20% da B3.</li>
+                                    <li>Reinvestimento automático de cupons.</li>
+                                    <li>Ideal para acumulação e aposentadoria.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="feature-box">
+                                <div class="feature-icon-wrapper" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">
+                                    <i class="bi bi-bank2"></i>
+                                </div>
+                                <h6 class="fw-bold text-white mb-2">Tesouro Direto</h6>
+                                <p class="text-muted small mb-2">
+                                    Exemplos: <strong>Tesouro Selic</strong>, <strong>Tesouro IPCA+</strong>.
+                                </p>
+                                <ul class="text-muted small ps-3 mb-0">
+                                    <li>Títulos soberanos com garantia do Tesouro Nacional.</li>
+                                    <li>Taxa de custódia da B3 de <strong>0,20% a.a.</strong>.</li>
+                                    <li>Tabela regressiva de IR (22,5% a 15%).</li>
+                                    <li>Possibilidade de travar fluxo com vencimentos específicos.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="feature-box">
+                                <div class="feature-icon-wrapper" style="background: rgba(139, 92, 246, 0.15); color: #c084fc;">
+                                    <i class="bi bi-wallet2"></i>
+                                </div>
+                                <h6 class="fw-bold text-white mb-2">CDBs de Caixinhas</h6>
+                                <p class="text-muted small mb-2">
+                                    Exemplos: <strong>Nubank, Inter, PicPay (100% CDI)</strong>.
+                                </p>
+                                <ul class="text-muted small ps-3 mb-0">
+                                    <li>Liquidez imediata diária para gastos e emergências.</li>
+                                    <li>Garantia do FGC até R$ 250.000 por CPF/instituição.</li>
+                                    <li>Tabela regressiva de IR (22,5% a 15%).</li>
+                                    <li>Excelente para reserva de oportunidade de curto prazo.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Open Source - Pedro Falconi -->
+    <footer class="py-5 mt-5">
+        <div class="container-fluid px-lg-5 text-center text-md-start">
+            <div class="row align-items-center g-4">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-3 mb-2">
+                        <span class="fs-5 fw-bold text-white">Simulador de Renda Fixa & ETFs</span>
+                        <span class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-25">MIT License</span>
+                    </div>
+                    <p class="text-muted small mb-0">
+                        Este é um <strong>projeto open source criado por Pedro Falconi</strong> para capacitar investidores brasileiros com dados reais de mercado e decisões de alta eficiência financeira.
+                    </p>
+                </div>
+
+                <div class="col-md-6 text-center text-md-end">
+                    <div class="author-badge">
+                        <i class="bi bi-person-check-fill text-primary fs-5"></i>
+                        <div class="text-start">
+                            <div class="text-white fw-bold small">Pedro Falconi</div>
+                            <small class="text-muted">Desenvolvedor & Criador do Projeto</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-secondary border-opacity-25 my-4">
+
+            <div class="d-flex flex-wrap justify-content-between align-items-center text-muted small">
+                <div>
+                    Dados em tempo real alimentados por 
+                    <strong class="text-light">B3 (Brasil, Bolsa, Balcão)</strong>, 
+                    <strong class="text-light">Tesouro Direto</strong> e 
+                    <a href="https://brasilapi.com.br" target="_blank" rel="noopener" class="text-decoration-none text-info">BrasilAPI</a>.
+                </div>
+                <div>
+                    Construído com PHP, Bootstrap 5 e Chart.js &bull; Open Source sob Licença MIT
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts Bootstrap 5.3 & Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="assets/js/app.js"></script>
+</body>
+</html>

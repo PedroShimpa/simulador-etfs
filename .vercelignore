@@ -1,0 +1,10 @@
+# Vercel Ignore File
+.git
+.gitignore
+.github
+scratch*
+*.log
+cache_*.json
+*.tmp
+.DS_Store
+Thumbs.db
