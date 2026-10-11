@@ -5,8 +5,9 @@
  * Integrado com B3 (Brasil, Bolsa, Balcão) & BrasilAPI
  */
 
-$cacheFile = __DIR__ . '/cache_taxas.json';
-$cacheB3File = __DIR__ . '/cache_b3.json';
+$cacheDir = sys_get_temp_dir();
+$cacheFile = rtrim($cacheDir, '/\\') . DIRECTORY_SEPARATOR . 'simulador_taxas_cache.json';
+$cacheB3File = rtrim($cacheDir, '/\\') . DIRECTORY_SEPARATOR . 'simulador_b3_cache.json';
 
 $taxasIniciais = [
     'selic' => 13.75,
@@ -16,19 +17,14 @@ $taxasIniciais = [
 ];
 
 if (file_exists($cacheFile)) {
-    $conteudo = json_decode(file_get_contents($cacheFile), true);
+    $conteudo = json_decode(@file_get_contents($cacheFile), true);
     if ($conteudo && isset($conteudo['selic'])) {
         $taxasIniciais = $conteudo;
     }
 }
-
-$dadosB3Iniciais = null;
-if (file_exists($cacheB3File)) {
-    $dadosB3Iniciais = json_decode(file_get_contents($cacheB3File), true);
-}
 ?>
 <!DOCTYPE html>
-<html lang="pt-BR" data-bs-theme="dark">
+<html lang="pt-BR" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -57,53 +53,57 @@ if (file_exists($cacheB3File)) {
     <nav class="navbar navbar-custom py-3 sticky-top">
         <div class="container-fluid px-lg-5">
             <div class="d-flex align-items-center gap-3">
-                <div class="feature-icon-wrapper mb-0" style="background: linear-gradient(135deg, #2563eb, #10b981); color: white;">
+                <div class="feature-icon-wrapper mb-0" style="background: linear-gradient(135deg, #2563eb, #059669); color: white;">
                     <i class="bi bi-graph-up-arrow fs-5"></i>
                 </div>
                 <div>
                     <div class="d-flex align-items-center gap-2">
-                        <span class="navbar-brand fw-bold text-white mb-0 fs-5">Simulador de Renda Fixa & ETFs</span>
+                        <span class="navbar-brand fw-bold text-dark mb-0 fs-5">Simulador de Renda Fixa & ETFs</span>
                         <span class="brand-badge d-none d-sm-inline-block">Open Source</span>
                     </div>
-                    <small class="text-muted d-block" style="font-size: 0.78rem;">
+                    <small class="text-muted d-block fw-semibold" style="font-size: 0.78rem;">
                         Comparador Otimizado com Dados Reais da B3 e BrasilAPI
                     </small>
                 </div>
             </div>
 
-            <!-- Badges BrasilAPI & B3 em Tempo Real -->
+            <!-- Badges BrasilAPI & B3 em Tempo Real + Alternador de Tema -->
             <div class="d-flex align-items-center gap-2 mt-2 mt-md-0 flex-wrap">
                 <div class="ticker-badge" title="Taxa Selic oficial">
                     <span class="pulse-dot"></span>
-                    <span class="text-muted small">SELIC:</span>
-                    <strong class="text-white" id="badge-selic-val"><?= number_format($taxasIniciais['selic'], 2, ',', '.') ?>% a.a.</strong>
+                    <span class="text-muted small fw-bold">SELIC:</span>
+                    <strong class="text-dark" id="badge-selic-val"><?= number_format($taxasIniciais['selic'], 2, ',', '.') ?>% a.a.</strong>
                 </div>
 
                 <div class="ticker-badge" title="Taxa CDI oficial">
-                    <span class="text-muted small">CDI:</span>
-                    <strong class="text-white" id="badge-cdi-val"><?= number_format($taxasIniciais['cdi'], 2, ',', '.') ?>% a.a.</strong>
+                    <span class="text-muted small fw-bold">CDI:</span>
+                    <strong class="text-dark" id="badge-cdi-val"><?= number_format($taxasIniciais['cdi'], 2, ',', '.') ?>% a.a.</strong>
                 </div>
 
                 <div class="ticker-badge" title="Inflação IPCA acumulada">
-                    <span class="text-muted small">IPCA:</span>
-                    <strong class="text-white" id="badge-ipca-val"><?= number_format($taxasIniciais['ipca'], 2, ',', '.') ?>% a.a.</strong>
+                    <span class="text-muted small fw-bold">IPCA:</span>
+                    <strong class="text-dark" id="badge-ipca-val"><?= number_format($taxasIniciais['ipca'], 2, ',', '.') ?>% a.a.</strong>
                 </div>
 
                 <button class="btn btn-sm btn-outline-secondary rounded-circle ms-1" id="btn-reload-taxas" title="Atualizar dados oficiais da B3 e BrasilAPI">
                     <i class="bi bi-arrow-clockwise"></i>
+                </button>
+
+                <!-- Botão de alternar tema Claro/Escuro -->
+                <button class="btn btn-sm btn-outline-secondary rounded-circle ms-1" id="btn-toggle-theme" title="Alternar entre tema Claro e Escuro">
+                    <i class="bi bi-moon-stars-fill" id="theme-toggle-icon"></i>
                 </button>
             </div>
         </div>
     </nav>
 
     <!-- Barra de Cotações da B3 em Tempo Real (Market Ticker) -->
-    <section class="border-bottom border-white border-opacity-10 py-2" style="background: rgba(0, 0, 0, 0.35);">
+    <section class="border-bottom border-secondary border-opacity-10 py-2" style="background: #ffffff;">
         <div class="container-fluid px-lg-5">
             <div class="d-flex align-items-center gap-3 overflow-x-auto py-1" id="b3-ticker-stream" style="white-space: nowrap;">
                 <div class="small text-muted fw-bold text-uppercase d-flex align-items-center gap-1">
                     <i class="bi bi-broadcast text-danger"></i> B3 Market Data:
                 </div>
-                <!-- Preenchido via app.js -->
                 <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
                 <span class="small text-muted">Carregando cotações oficiais dos ETFs na B3...</span>
             </div>
@@ -114,19 +114,19 @@ if (file_exists($cacheB3File)) {
     <header class="container-fluid px-lg-5 pt-4 pb-2">
         <div class="row align-items-center justify-content-between g-3">
             <div class="col-lg-8">
-                <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-2" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.25);">
+                <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-2" style="background: rgba(37, 99, 235, 0.08); border: 1px solid rgba(37, 99, 235, 0.2);">
                     <i class="bi bi-code-slash text-primary"></i>
-                    <span class="small text-primary fw-semibold">Projeto Open Source criado por Pedro Falconi</span>
+                    <span class="small text-primary fw-bold">Projeto Open Source criado por Pedro Falconi</span>
                 </div>
-                <h1 class="display-6 fw-bold text-white mb-2">
+                <h1 class="display-6 fw-bold text-dark mb-2">
                     Simulador Financeiro com Cotações e Taxas Reais da B3
                 </h1>
-                <p class="text-muted mb-0" style="max-width: 860px;">
+                <p class="text-muted fw-semibold mb-0 fs-6" style="max-width: 860px;">
                     Calcule seus rendimentos em longo prazo com <strong>cotações reais dos ETFs na B3</strong> (B5P211, LFTS11, IMAB11) e taxas oficiais do <strong>Tesouro Direto</strong>. Compare a alíquota fixa de 15% de IR contra o imposto regressivo dos CDBs e títulos públicos.
                 </p>
             </div>
             <div class="col-lg-4 text-lg-end">
-                <button type="button" class="btn btn-outline-light rounded-pill px-4 py-2 small fw-semibold" onclick="copiarResumoSimulacao()">
+                <button type="button" class="btn btn-outline-primary rounded-pill px-4 py-2 small fw-bold" onclick="copiarResumoSimulacao()">
                     <i class="bi bi-share-fill me-2"></i> Compartilhar / Copiar Resumo
                 </button>
             </div>
@@ -140,8 +140,8 @@ if (file_exists($cacheB3File)) {
             <!-- Painel Esquerdo: Parâmetros de Simulação -->
             <div class="col-xl-4 col-lg-5">
                 <div class="glass-panel p-4 sticky-lg-top" style="top: 130px; z-index: 10;">
-                    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom border-white border-opacity-10">
-                        <h5 class="fw-bold text-white mb-0">
+                    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom border-secondary border-opacity-10">
+                        <h5 class="fw-bold text-dark mb-0">
                             <i class="bi bi-sliders2-vertical text-primary me-2"></i>Parâmetros do Investimento
                         </h5>
                         <div id="api-status-text" class="small"></div>
@@ -155,7 +155,7 @@ if (file_exists($cacheB3File)) {
                                 <span class="input-group-text">R$</span>
                                 <input type="number" step="100" min="0" class="form-control form-control-custom" id="input-aporte-inicial" value="10000" required>
                             </div>
-                            <small class="text-dim">Patrimônio inicial a ser alocado</small>
+                            <small class="text-muted fw-semibold" style="font-size: 0.76rem;">Patrimônio inicial a ser alocado</small>
                         </div>
 
                         <!-- Aporte Mensal -->
@@ -165,14 +165,14 @@ if (file_exists($cacheB3File)) {
                                 <span class="input-group-text">R$</span>
                                 <input type="number" step="50" min="0" class="form-control form-control-custom" id="input-aporte-mensal" value="1000" required>
                             </div>
-                            <small class="text-dim">Investimento recorrente todo mês</small>
+                            <small class="text-muted fw-semibold" style="font-size: 0.76rem;">Investimento recorrente todo mês</small>
                         </div>
 
                         <!-- Prazo em Anos -->
                         <div class="mb-3">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <label for="input-prazo-anos" class="form-label-custom mb-0">Prazo de Acumulação</label>
-                                <span class="badge bg-primary bg-opacity-20 text-primary fw-bold" id="badge-prazo-info">Anos e Meses</span>
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 fw-bold" id="badge-prazo-info">Anos e Meses</span>
                             </div>
                             <div class="input-group input-group-custom mb-2">
                                 <input type="number" step="1" min="1" max="50" class="form-control form-control-custom" id="input-prazo-anos" value="10">
@@ -193,14 +193,14 @@ if (file_exists($cacheB3File)) {
 
                         <!-- Accordion Parâmetros Avançados (B3 + BrasilAPI) -->
                         <div class="accordion accordion-flush mb-4" id="accordionMacro">
-                            <div class="accordion-item bg-transparent border border-white border-opacity-10 rounded-3 overflow-hidden">
+                            <div class="accordion-item bg-transparent border border-secondary border-opacity-10 rounded-3 overflow-hidden">
                                 <h2 class="accordion-header">
-                                    <button class="accordion-button collapsed bg-transparent text-white shadow-none py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMacro">
-                                        <i class="bi bi-cpu text-info me-2"></i> Taxas Reais B3 & BrasilAPI
+                                    <button class="accordion-button collapsed bg-light text-dark fw-bold shadow-none py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMacro">
+                                        <i class="bi bi-cpu text-primary me-2"></i> Taxas Reais B3 & BrasilAPI
                                     </button>
                                 </h2>
                                 <div id="collapseMacro" class="accordion-collapse collapse" data-bs-parent="#accordionMacro">
-                                    <div class="accordion-body pt-2 pb-3" style="background: rgba(0,0,0,0.2);">
+                                    <div class="accordion-body pt-3 pb-3" style="background: #f8fafc;">
                                         <div class="row g-2 mb-3">
                                             <div class="col-6">
                                                 <label for="input-taxa-selic" class="form-label-custom small">SELIC (% a.a.)</label>
@@ -223,10 +223,10 @@ if (file_exists($cacheB3File)) {
                                         <div class="mb-1">
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <label class="form-label-custom small mb-0">% CDI da Caixinha</label>
-                                                <span class="text-white fw-bold small" id="label-cdi-caixinha">100%</span>
+                                                <span class="text-dark fw-bold small" id="label-cdi-caixinha">100%</span>
                                             </div>
                                             <input type="range" class="form-range" id="slider-cdi-caixinha" min="90" max="130" step="5" value="100">
-                                            <small class="text-muted" style="font-size: 0.72rem;">Ex: 100% (Nubank/Inter) a 110% (Promoções PicPay/C6)</small>
+                                            <small class="text-muted fw-semibold" style="font-size: 0.72rem;">Ex: 100% (Nubank/Inter) a 110% (Promoções PicPay/C6)</small>
                                         </div>
                                     </div>
                                 </div>
@@ -248,7 +248,7 @@ if (file_exists($cacheB3File)) {
                 <div class="row g-3" id="cards-container">
                     <div class="col-12 text-center py-5">
                         <div class="spinner-border text-primary" role="status"></div>
-                        <p class="text-muted mt-2">Sincronizando dados com a B3 e BrasilAPI...</p>
+                        <p class="text-muted mt-2 fw-semibold">Sincronizando dados com a B3 e BrasilAPI...</p>
                     </div>
                 </div>
 
@@ -257,13 +257,13 @@ if (file_exists($cacheB3File)) {
                     <!-- Preenchido via app.js -->
                 </div>
 
-                <!-- NOVO: Monitor de Mercado B3 em Tempo Real -->
+                <!-- Monitor de Mercado B3 em Tempo Real -->
                 <div class="glass-panel p-4 mb-4" id="monitor-b3">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 pb-2 border-bottom border-white border-opacity-10">
-                        <h5 class="fw-bold text-white mb-0">
-                            <i class="bi bi-activity text-info me-2"></i>Monitor de Mercado B3: Cotações & Títulos Oficiais
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 pb-2 border-bottom border-secondary border-opacity-10">
+                        <h5 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-activity text-primary me-2"></i>Monitor de Mercado B3: Cotações & Títulos Oficiais
                         </h5>
-                        <span class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-25">
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 fw-bold px-2 py-1">
                             <i class="bi bi-check2-circle me-1"></i> Dados Oficiais B3 & Tesouro Nacional
                         </span>
                     </div>
@@ -290,8 +290,8 @@ if (file_exists($cacheB3File)) {
 
                 <!-- Abas de Visualização (Evolução / Custos / Tabela) -->
                 <div class="glass-panel p-4 mb-4">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4 pb-3 border-bottom border-white border-opacity-10">
-                        <h5 class="fw-bold text-white mb-0">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4 pb-3 border-bottom border-secondary border-opacity-10">
+                        <h5 class="fw-bold text-dark mb-0">
                             <i class="bi bi-bar-chart-line text-success me-2"></i>Análise Comparativa Detalhada
                         </h5>
                         <ul class="nav nav-pills nav-pills-custom" id="pills-tab" role="tablist">
@@ -319,7 +319,7 @@ if (file_exists($cacheB3File)) {
                             <div class="chart-container-box">
                                 <canvas id="chart-evolution"></canvas>
                             </div>
-                            <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top border-white border-opacity-10 small text-muted">
+                            <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top border-secondary border-opacity-10 small text-muted fw-semibold">
                                 <span>* Patrimônio líquido após dedução de IR e custos.</span>
                                 <span>Fontes de Dados: B3 &bull; Tesouro Direto &bull; BrasilAPI</span>
                             </div>
@@ -330,8 +330,8 @@ if (file_exists($cacheB3File)) {
                             <div class="chart-container-box">
                                 <canvas id="chart-costs"></canvas>
                             </div>
-                            <div class="mt-3 p-3 rounded-3" style="background: rgba(0,0,0,0.25);">
-                                <small class="text-muted d-block">
+                            <div class="mt-3 p-3 rounded-3" style="background: #f1f5f9; border: 1px solid #e2e8f0;">
+                                <small class="text-dark d-block fw-semibold">
                                     <strong>Custódia B3 de 0,20% a.a.:</strong> Cobrada no Tesouro Direto. Os ETFs de Renda Fixa da B3 (B5P211, LFTS11, IMAB11) não pagam taxa de custódia à B3, gerando uma poupança cumulativa expressiva no longo prazo.
                                 </small>
                             </div>
@@ -363,21 +363,21 @@ if (file_exists($cacheB3File)) {
 
                 <!-- Seção Didática: Guia do Investidor -->
                 <div class="glass-panel p-4" id="guia-didatico">
-                    <h5 class="fw-bold text-white mb-3">
+                    <h5 class="fw-bold text-dark mb-3">
                         <i class="bi bi-mortarboard-fill text-primary me-2"></i>Guia Prático: Como escolher entre ETF, Tesouro e Caixinhas?
                     </h5>
 
                     <div class="row g-3">
                         <div class="col-md-4">
                             <div class="feature-box">
-                                <div class="feature-icon-wrapper" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;">
+                                <div class="feature-icon-wrapper" style="background: rgba(37, 99, 235, 0.1); color: #2563eb;">
                                     <i class="bi bi-graph-up-arrow"></i>
                                 </div>
-                                <h6 class="fw-bold text-white mb-2">ETFs de Renda Fixa (B3)</h6>
-                                <p class="text-muted small mb-2">
+                                <h6 class="fw-bold text-dark mb-2">ETFs de Renda Fixa (B3)</h6>
+                                <p class="text-muted small fw-semibold mb-2">
                                     Exemplos: <strong>B5P211</strong>, <strong>IMAB11</strong>, <strong>LFTS11</strong>.
                                 </p>
-                                <ul class="text-muted small ps-3 mb-0">
+                                <ul class="text-muted small ps-3 mb-0 fw-semibold">
                                     <li>Alíquota única de <strong>15% de IR</strong> independente do tempo de cada aporte.</li>
                                     <li><strong>Sem come-cotas</strong> e sem taxa de 0,20% da B3.</li>
                                     <li>Reinvestimento automático de cupons.</li>
@@ -388,14 +388,14 @@ if (file_exists($cacheB3File)) {
 
                         <div class="col-md-4">
                             <div class="feature-box">
-                                <div class="feature-icon-wrapper" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">
+                                <div class="feature-icon-wrapper" style="background: rgba(217, 119, 6, 0.1); color: #d97706;">
                                     <i class="bi bi-bank2"></i>
                                 </div>
-                                <h6 class="fw-bold text-white mb-2">Tesouro Direto</h6>
-                                <p class="text-muted small mb-2">
+                                <h6 class="fw-bold text-dark mb-2">Tesouro Direto</h6>
+                                <p class="text-muted small fw-semibold mb-2">
                                     Exemplos: <strong>Tesouro Selic</strong>, <strong>Tesouro IPCA+</strong>.
                                 </p>
-                                <ul class="text-muted small ps-3 mb-0">
+                                <ul class="text-muted small ps-3 mb-0 fw-semibold">
                                     <li>Títulos soberanos com garantia do Tesouro Nacional.</li>
                                     <li>Taxa de custódia da B3 de <strong>0,20% a.a.</strong>.</li>
                                     <li>Tabela regressiva de IR (22,5% a 15%).</li>
@@ -406,14 +406,14 @@ if (file_exists($cacheB3File)) {
 
                         <div class="col-md-4">
                             <div class="feature-box">
-                                <div class="feature-icon-wrapper" style="background: rgba(139, 92, 246, 0.15); color: #c084fc;">
+                                <div class="feature-icon-wrapper" style="background: rgba(124, 58, 237, 0.1); color: #7c3aed;">
                                     <i class="bi bi-wallet2"></i>
                                 </div>
-                                <h6 class="fw-bold text-white mb-2">CDBs de Caixinhas</h6>
-                                <p class="text-muted small mb-2">
+                                <h6 class="fw-bold text-dark mb-2">CDBs de Caixinhas</h6>
+                                <p class="text-muted small fw-semibold mb-2">
                                     Exemplos: <strong>Nubank, Inter, PicPay (100% CDI)</strong>.
                                 </p>
-                                <ul class="text-muted small ps-3 mb-0">
+                                <ul class="text-muted small ps-3 mb-0 fw-semibold">
                                     <li>Liquidez imediata diária para gastos e emergências.</li>
                                     <li>Garantia do FGC até R$ 250.000 por CPF/instituição.</li>
                                     <li>Tabela regressiva de IR (22,5% a 15%).</li>
@@ -434,10 +434,10 @@ if (file_exists($cacheB3File)) {
             <div class="row align-items-center g-4">
                 <div class="col-md-6">
                     <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-3 mb-2">
-                        <span class="fs-5 fw-bold text-white">Simulador de Renda Fixa & ETFs</span>
-                        <span class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-25">MIT License</span>
+                        <span class="fs-5 fw-bold text-dark">Simulador de Renda Fixa & ETFs</span>
+                        <span class="badge bg-success bg-opacity-15 text-success border border-success border-opacity-25 fw-bold">MIT License</span>
                     </div>
-                    <p class="text-muted small mb-0">
+                    <p class="text-muted small fw-semibold mb-0">
                         Este é um <strong>projeto open source criado por Pedro Falconi</strong> para capacitar investidores brasileiros com dados reais de mercado e decisões de alta eficiência financeira.
                     </p>
                 </div>
@@ -446,21 +446,21 @@ if (file_exists($cacheB3File)) {
                     <div class="author-badge">
                         <i class="bi bi-person-check-fill text-primary fs-5"></i>
                         <div class="text-start">
-                            <div class="text-white fw-bold small">Pedro Falconi</div>
-                            <small class="text-muted">Desenvolvedor & Criador do Projeto</small>
+                            <div class="text-dark fw-bold small">Pedro Falconi</div>
+                            <small class="text-muted fw-semibold">Desenvolvedor & Criador do Projeto</small>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <hr class="border-secondary border-opacity-25 my-4">
+            <hr class="border-secondary border-opacity-15 my-4">
 
-            <div class="d-flex flex-wrap justify-content-between align-items-center text-muted small">
+            <div class="d-flex flex-wrap justify-content-between align-items-center text-muted small fw-semibold">
                 <div>
                     Dados em tempo real alimentados por 
-                    <strong class="text-light">B3 (Brasil, Bolsa, Balcão)</strong>, 
-                    <strong class="text-light">Tesouro Direto</strong> e 
-                    <a href="https://brasilapi.com.br" target="_blank" rel="noopener" class="text-decoration-none text-info">BrasilAPI</a>.
+                    <strong class="text-dark">B3 (Brasil, Bolsa, Balcão)</strong>, 
+                    <strong class="text-dark">Tesouro Direto</strong> e 
+                    <a href="https://brasilapi.com.br" target="_blank" rel="noopener" class="text-decoration-none text-primary fw-bold">BrasilAPI</a>.
                 </div>
                 <div>
                     Construído com PHP, Bootstrap 5 e Chart.js &bull; Open Source sob Licença MIT

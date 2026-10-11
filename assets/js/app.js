@@ -1,7 +1,7 @@
 /**
  * Simulador de Renda Fixa & ETFs - Pedro Falconi
  * Lógica de Interface, Gráficos Chart.js e Integração BrasilAPI + B3
- * Otimizado para Vercel Serverless com Fallback Client-Side
+ * Otimizado para Tema Claro (Alta Legibilidade de Dados) & Fallback Vercel
  */
 
 // Formatação Monetária BRL
@@ -29,6 +29,7 @@ let dadosB3Cache = null;
 
 // Inicialização da aplicação
 document.addEventListener('DOMContentLoaded', () => {
+    initThemeManager();
     initQuickPrazoButtons();
     initMasksAndInputs();
     
@@ -57,6 +58,37 @@ document.addEventListener('DOMContentLoaded', () => {
         runSimulation();
     }, 400);
 });
+
+// Gerenciador de Tema (Padrão: Claro)
+function initThemeManager() {
+    const savedTheme = localStorage.getItem('theme_preference') || 'light';
+    setTheme(savedTheme);
+
+    const toggleBtn = document.getElementById('btn-toggle-theme');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+            const nextTheme = currentTheme === 'light' ? 'dark' : 'light';
+            setTheme(nextTheme);
+            localStorage.setItem('theme_preference', nextTheme);
+            if (currentSimulationData) {
+                renderCharts(currentSimulationData);
+            }
+        });
+    }
+}
+
+function setTheme(theme) {
+    document.documentElement.setAttribute('data-bs-theme', theme);
+    const icon = document.getElementById('theme-toggle-icon');
+    if (icon) {
+        if (theme === 'dark') {
+            icon.className = 'bi bi-sun-fill text-warning';
+        } else {
+            icon.className = 'bi bi-moon-stars-fill text-secondary';
+        }
+    }
+}
 
 // Configura botões rápidos de prazo
 function initQuickPrazoButtons() {
@@ -146,7 +178,7 @@ async function carregarDadosMercadoIntegrados(forceRefresh = false) {
             }
 
             if (apiStatusText) {
-                apiStatusText.innerHTML = `<span class="text-success"><i class="bi bi-patch-check-fill"></i> B3 & BrasilAPI Conectadas</span>`;
+                apiStatusText.innerHTML = `<span class="text-success fw-bold"><i class="bi bi-patch-check-fill"></i> B3 & BrasilAPI Conectadas</span>`;
             }
         } else {
             renderB3FallbackDefault();
@@ -174,7 +206,7 @@ function renderB3FallbackDefault() {
     renderB3MarketTable(fallbackB3);
     const apiStatusText = document.getElementById('api-status-text');
     if (apiStatusText) {
-        apiStatusText.innerHTML = `<span class="text-info"><i class="bi bi-check-circle"></i> B3 & BrasilAPI Operacionais</span>`;
+        apiStatusText.innerHTML = `<span class="text-primary fw-bold"><i class="bi bi-check-circle-fill"></i> B3 & BrasilAPI Operacionais</span>`;
     }
 }
 
@@ -191,9 +223,9 @@ function renderB3TickerBar(dataB3) {
 
         html += `
         <div class="ticker-badge" title="${item.nome} - Cotação oficial na B3">
-            <span class="fw-bold text-white">${ticker}:</span>
-            <span class="text-light">${formatMoney(item.preco)}</span>
-            <span class="${colorClass} small fw-semibold">
+            <strong class="text-dark">${ticker}:</strong>
+            <span class="fw-bold text-primary">${formatMoney(item.preco)}</span>
+            <span class="${colorClass} small fw-bold">
                 <i class="bi ${icon}"></i> ${item.variacao_perc > 0 ? '+' : ''}${item.variacao_perc.toFixed(2)}%
             </span>
         </div>
@@ -203,8 +235,8 @@ function renderB3TickerBar(dataB3) {
     if (dataB3.tesouro_b3 && dataB3.tesouro_b3.tesouro_ipca) {
         html += `
         <div class="ticker-badge" title="Taxa real oficial de compra do Tesouro IPCA+ negociada na B3">
-            <span class="fw-bold text-warning"><i class="bi bi-bank2 me-1"></i>${dataB3.tesouro_b3.tesouro_ipca.titulo}:</span>
-            <span class="text-white">IPCA + ${dataB3.tesouro_b3.tesouro_ipca.taxa_anual.toFixed(2)}% a.a.</span>
+            <strong class="text-warning-emphasis"><i class="bi bi-bank2 me-1"></i>${dataB3.tesouro_b3.tesouro_ipca.titulo}:</strong>
+            <span class="text-dark fw-bold">IPCA + ${dataB3.tesouro_b3.tesouro_ipca.taxa_anual.toFixed(2)}% a.a.</span>
         </div>
         `;
     }
@@ -225,13 +257,13 @@ function renderB3MarketTable(dataB3) {
         html += `
         <tr>
             <td>
-                <span class="badge bg-primary bg-opacity-20 text-primary fw-bold me-1">${ticker}</span>
-                <span class="text-white small fw-semibold">${item.nome}</span>
+                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 fw-bold me-2 px-2 py-1">${ticker}</span>
+                <span class="text-dark fw-bold">${item.nome}</span>
             </td>
-            <td class="text-white fw-bold">${formatMoney(item.preco)}</td>
-            <td class="${colorClass} fw-semibold">${item.variacao_perc > 0 ? '+' : ''}${item.variacao_perc.toFixed(2)}%</td>
-            <td class="text-muted small">${item.min_52w > 0 ? formatMoney(item.min_52w) + ' - ' + formatMoney(item.max_52w) : '-'}</td>
-            <td class="text-muted small">${item.volume ? Number(item.volume).toLocaleString('pt-BR') : '-'}</td>
+            <td class="text-dark fw-bold fs-6">${formatMoney(item.preco)}</td>
+            <td class="${colorClass} fw-bold">${item.variacao_perc > 0 ? '+' : ''}${item.variacao_perc.toFixed(2)}%</td>
+            <td class="text-muted fw-semibold small">${item.min_52w > 0 ? formatMoney(item.min_52w) + ' - ' + formatMoney(item.max_52w) : '-'}</td>
+            <td class="text-muted fw-semibold small">${item.volume ? Number(item.volume).toLocaleString('pt-BR') : '-'}</td>
         </tr>
         `;
     }
@@ -423,12 +455,12 @@ function calcularClientSide(payload) {
     };
 }
 
-// Executar Simulação (com suporte a API ou fallback Instantâneo na Vercel)
+// Executar Simulação
 async function runSimulation() {
     const btnSimular = document.getElementById('btn-simular');
     if (btnSimular) {
         btnSimular.disabled = true;
-        btnSimular.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Otimizando com B3...';
+        btnSimular.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Calculando...';
     }
 
     const payload = {
@@ -460,10 +492,9 @@ async function runSimulation() {
                 data = await response.json();
             }
         } catch (fetchErr) {
-            console.info('Utilizando motor de cálculo local da Vercel:', fetchErr);
+            console.info('Utilizando motor de cálculo local:', fetchErr);
         }
 
-        // Se a API não respondeu ou ambiente for puramente estático, usa motor local
         if (!data || !data.resultados) {
             data = calcularClientSide(payload);
         }
@@ -484,7 +515,7 @@ async function runSimulation() {
     }
 }
 
-// Renderiza Cards e Métricas
+// Renderiza Cards e Métricas com Alta Legibilidade
 function renderResults(data) {
     const res = data.resultados;
     const cardsContainer = document.getElementById('cards-container');
@@ -501,42 +532,42 @@ function renderResults(data) {
 
     const assetMeta = {
         'etf_ipca': {
-            badgeColor: 'primary',
+            badgeClass: 'bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25',
             cardClass: 'card-etf',
             icon: 'bi-graph-up-arrow',
-            accent: '#3b82f6',
+            accent: '#2563eb',
             titulo: 'ETF Renda Fixa IPCA',
             subtitulo: 'B5P211 / IMAB11 (B3)'
         },
         'tesouro_ipca': {
-            badgeColor: 'warning',
+            badgeClass: 'bg-warning bg-opacity-15 text-warning-emphasis border border-warning border-opacity-25',
             cardClass: 'card-tesouro',
             icon: 'bi-bank2',
-            accent: '#f59e0b',
+            accent: '#d97706',
             titulo: 'Tesouro IPCA+',
             subtitulo: 'NTN-B Principal (B3)'
         },
         'etf_selic': {
-            badgeColor: 'info',
+            badgeClass: 'bg-info bg-opacity-15 text-info-emphasis border border-info border-opacity-25',
             cardClass: 'card-etf',
             icon: 'bi-lightning-charge-fill',
-            accent: '#06b6d4',
+            accent: '#0284c7',
             titulo: 'ETF Pós-Fixado DI',
             subtitulo: 'LFTS11 (B3)'
         },
         'cdb_caixinha': {
-            badgeColor: 'purple',
+            badgeClass: 'bg-purple bg-opacity-15 text-purple border border-purple border-opacity-25',
             cardClass: 'card-cdb',
             icon: 'bi-wallet2',
-            accent: '#8b5cf6',
+            accent: '#7c3aed',
             titulo: 'CDB Caixinha Bancos',
             subtitulo: `${data.parametros.perc_cdi_caixinha}% do CDI (Nubank/Inter)`
         },
         'tesouro_selic': {
-            badgeColor: 'secondary',
+            badgeClass: 'bg-secondary bg-opacity-15 text-secondary-emphasis border border-secondary border-opacity-25',
             cardClass: 'card-tesouro',
             icon: 'bi-shield-check',
-            accent: '#64748b',
+            accent: '#475569',
             titulo: 'Tesouro Selic',
             subtitulo: 'LFT Soberano (B3)'
         }
@@ -547,10 +578,10 @@ function renderResults(data) {
     for (const [key, item] of Object.entries(res)) {
         const isWinner = (key === chaveVencedor);
         const meta = assetMeta[key] || {
-            badgeColor: 'primary',
+            badgeClass: 'bg-primary bg-opacity-10 text-primary',
             cardClass: '',
             icon: 'bi-coin',
-            accent: '#3b82f6',
+            accent: '#2563eb',
             titulo: item.nome,
             subtitulo: item.categoria
         };
@@ -571,63 +602,67 @@ function renderResults(data) {
                 ${isWinner ? `<div class="winner-badge"><i class="bi bi-trophy-fill me-1"></i> Maior Retorno Líquido</div>` : ''}
                 
                 <div class="d-flex align-items-center mb-3">
-                    <div class="feature-icon-wrapper me-3" style="background: rgba(255,255,255,0.06); color: ${meta.accent};">
+                    <div class="feature-icon-wrapper me-3" style="background: rgba(37, 99, 235, 0.08); color: ${meta.accent};">
                         <i class="bi ${meta.icon}"></i>
                     </div>
                     <div>
-                        <span class="badge bg-${meta.badgeColor} bg-opacity-25 text-${meta.badgeColor} badge-tag mb-1">
+                        <span class="badge ${meta.badgeClass} badge-tag mb-1">
                             ${item.categoria}
                         </span>
-                        <h5 class="fw-bold mb-0 text-white">${meta.titulo}</h5>
-                        <small class="text-muted">${meta.subtitulo}</small>
+                        <h5 class="fw-bold mb-0 text-dark">${meta.titulo}</h5>
+                        <small class="text-muted fw-semibold">${meta.subtitulo}</small>
                     </div>
                 </div>
 
-                <div class="my-3 p-3 rounded-3" style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.05);">
-                    <small class="text-muted d-block text-uppercase fw-semibold mb-1" style="font-size: 0.72rem;">Patrimônio Líquido Final</small>
-                    <div class="asset-value-highlight text-white">${formatMoney(saldoLiquido)}</div>
+                <!-- Caixa Destaque de Patrimônio -->
+                <div class="my-3 metric-highlight-box">
+                    <small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.74rem; letter-spacing: 0.04em;">
+                        Patrimônio Líquido Final
+                    </small>
+                    <div class="asset-value-highlight text-dark">${formatMoney(saldoLiquido)}</div>
                     <div class="d-flex align-items-center mt-2 gap-2 flex-wrap">
-                        <span class="badge bg-success bg-opacity-20 text-success fw-bold">
+                        <span class="badge bg-success text-white fw-bold px-2 py-1">
                             +${rentPerc.toFixed(1)}% líquido
                         </span>
-                        <small class="text-muted">Lucro de ${formatMoney(lucroLiquido)}</small>
+                        <span class="text-success-emphasis fw-bold small">Lucro de ${formatMoney(lucroLiquido)}</span>
                     </div>
 
                     ${cotaPreco > 0 ? `
-                    <div class="mt-2 pt-2 border-top border-white border-opacity-10 d-flex justify-content-between align-items-center small">
-                        <span class="text-muted"><i class="bi bi-check2-circle text-primary"></i> Cota B3: <strong>${formatMoney(cotaPreco)}</strong></span>
-                        <span class="text-primary fw-semibold">~${cotasTotal.toLocaleString('pt-BR')} cotas</span>
+                    <div class="mt-2 pt-2 border-top border-secondary border-opacity-10 d-flex justify-content-between align-items-center small">
+                        <span class="text-muted fw-semibold"><i class="bi bi-check2-circle text-primary me-1"></i>Cota B3: <strong>${formatMoney(cotaPreco)}</strong></span>
+                        <span class="text-primary fw-bold">~${cotasTotal.toLocaleString('pt-BR')} cotas</span>
                     </div>
                     ` : ''}
                 </div>
 
-                <div class="mt-auto pt-2 border-top border-white border-opacity-10">
+                <!-- Detalhamento de Custos e Impostos -->
+                <div class="mt-auto pt-2 border-top border-secondary border-opacity-10">
                     <div class="d-flex justify-content-between py-1 small">
-                        <span class="text-muted">Total Investido (Aportes):</span>
-                        <span class="fw-semibold text-light">${formatMoney(totalInvestido)}</span>
+                        <span class="text-muted fw-semibold">Total Investido (Aportes):</span>
+                        <strong class="text-dark">${formatMoney(totalInvestido)}</strong>
                     </div>
                     <div class="d-flex justify-content-between py-1 small">
-                        <span class="text-muted">Imposto de Renda (IR):</span>
-                        <span class="text-danger fw-semibold">-${formatMoney(irPago)} <small>(${item.dados.aliquota_media_ir}%)</small></span>
+                        <span class="text-muted fw-semibold">Imposto de Renda (IR):</span>
+                        <strong class="text-danger">-${formatMoney(irPago)} <small>(${item.dados.aliquota_media_ir}%)</small></strong>
                     </div>
                     ${custodiaB3 > 0 ? `
                     <div class="d-flex justify-content-between py-1 small">
-                        <span class="text-muted">Taxa B3 (0,20% a.a.):</span>
-                        <span class="text-warning fw-semibold">-${formatMoney(custodiaB3)}</span>
+                        <span class="text-muted fw-semibold">Taxa B3 (0,20% a.a.):</span>
+                        <strong class="text-warning-emphasis">-${formatMoney(custodiaB3)}</strong>
                     </div>
                     ` : `
                     <div class="d-flex justify-content-between py-1 small">
-                        <span class="text-muted">Taxa de Custódia B3:</span>
-                        <span class="text-success fw-semibold"><i class="bi bi-check2"></i> Isento (0%)</span>
+                        <span class="text-muted fw-semibold">Taxa de Custódia B3:</span>
+                        <strong class="text-success"><i class="bi bi-check2"></i> Isento (0%)</strong>
                     </div>
                     `}
                     <div class="d-flex justify-content-between py-1 small">
-                        <span class="text-muted">Poder de Compra Real:</span>
-                        <span class="text-info fw-semibold" title="Descontando a inflação acumulada no período">${formatMoney(poderCompra)}</span>
+                        <span class="text-muted fw-semibold">Poder de Compra Real:</span>
+                        <strong class="text-info-emphasis" title="Descontando a inflação acumulada no período">${formatMoney(poderCompra)}</strong>
                     </div>
                     <div class="d-flex justify-content-between py-1 small">
-                        <span class="text-muted">Regra Tributária:</span>
-                        <span class="text-secondary fw-semibold">${item.ir_regra}</span>
+                        <span class="text-muted fw-semibold">Regra Tributária:</span>
+                        <strong class="text-secondary">${item.ir_regra}</strong>
                     </div>
                 </div>
             </div>
@@ -638,8 +673,12 @@ function renderResults(data) {
     cardsContainer.innerHTML = html;
 }
 
-// Renderiza Gráficos Chart.js
+// Renderiza Gráficos Chart.js com Paleta de Alta Legibilidade
 function renderCharts(data) {
+    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    const textColor = isDark ? '#9ca3af' : '#475569';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0';
+
     const res = data.resultados;
     const labels = [];
     
@@ -667,18 +706,19 @@ function renderCharts(data) {
                     {
                         label: 'ETF IPCA (B5P211 / B3)',
                         data: datasetEtfIpca,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 3,
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.08)',
+                        borderWidth: 3.5,
                         tension: 0.35,
                         fill: false,
-                        pointRadius: 4
+                        pointRadius: 4,
+                        pointHoverRadius: 6
                     },
                     {
                         label: 'Tesouro IPCA+ (B3)',
                         data: datasetTesouroIpca,
-                        borderColor: '#f59e0b',
-                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        borderColor: '#d97706',
+                        backgroundColor: 'rgba(217, 119, 6, 0.08)',
                         borderWidth: 2.5,
                         borderDash: [5, 5],
                         tension: 0.35,
@@ -688,8 +728,8 @@ function renderCharts(data) {
                     {
                         label: 'ETF Selic (LFTS11 / B3)',
                         data: datasetEtfSelic,
-                        borderColor: '#06b6d4',
-                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                        borderColor: '#0284c7',
+                        backgroundColor: 'rgba(2, 132, 199, 0.08)',
                         borderWidth: 2.5,
                         tension: 0.35,
                         fill: false,
@@ -698,8 +738,8 @@ function renderCharts(data) {
                     {
                         label: 'CDB Caixinha (100% CDI)',
                         data: datasetCdb,
-                        borderColor: '#8b5cf6',
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        borderColor: '#7c3aed',
+                        backgroundColor: 'rgba(124, 58, 237, 0.08)',
                         borderWidth: 2,
                         tension: 0.35,
                         fill: false,
@@ -709,7 +749,7 @@ function renderCharts(data) {
                         label: 'Tesouro Selic (B3)',
                         data: datasetTesouroSelic,
                         borderColor: '#64748b',
-                        backgroundColor: 'rgba(100, 116, 139, 0.1)',
+                        backgroundColor: 'rgba(100, 116, 139, 0.08)',
                         borderWidth: 2,
                         tension: 0.35,
                         fill: false,
@@ -718,8 +758,8 @@ function renderCharts(data) {
                     {
                         label: 'Total Aportado',
                         data: datasetTotalAportado,
-                        borderColor: 'rgba(255, 255, 255, 0.3)',
-                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                        borderColor: '#94a3b8',
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
                         borderWidth: 1.5,
                         borderDash: [3, 3],
                         tension: 0,
@@ -739,17 +779,17 @@ function renderCharts(data) {
                     legend: {
                         position: 'top',
                         labels: {
-                            color: '#9ca3af',
+                            color: textColor,
                             usePointStyle: true,
                             padding: 18,
-                            font: { family: 'Plus Jakarta Sans', size: 12 }
+                            font: { family: 'Plus Jakarta Sans', size: 12, weight: '700' }
                         }
                     },
                     tooltip: {
-                        backgroundColor: '#1f2937',
-                        titleColor: '#fff',
-                        bodyColor: '#e5e7eb',
-                        borderColor: 'rgba(255,255,255,0.1)',
+                        backgroundColor: '#0f172a',
+                        titleColor: '#ffffff',
+                        bodyColor: '#f8fafc',
+                        borderColor: '#334155',
                         borderWidth: 1,
                         padding: 12,
                         callbacks: {
@@ -761,13 +801,14 @@ function renderCharts(data) {
                 },
                 scales: {
                     x: {
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                        ticks: { color: '#9ca3af' }
+                        grid: { color: gridColor },
+                        ticks: { color: textColor, font: { weight: '600' } }
                     },
                     y: {
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        grid: { color: gridColor },
                         ticks: {
-                            color: '#9ca3af',
+                            color: textColor,
+                            font: { weight: '600' },
                             callback: function(val) {
                                 if (val >= 1000000) return 'R$ ' + (val / 1000000).toFixed(1) + 'M';
                                 if (val >= 1000) return 'R$ ' + (val / 1000).toFixed(0) + 'k';
@@ -799,19 +840,19 @@ function renderCharts(data) {
                     {
                         label: 'Lucro Líquido no Bolso',
                         data: lucros,
-                        backgroundColor: '#10b981',
+                        backgroundColor: '#059669',
                         borderRadius: 6
                     },
                     {
                         label: 'Imposto de Renda (IR)',
                         data: irs,
-                        backgroundColor: '#ef4444',
+                        backgroundColor: '#dc2626',
                         borderRadius: 6
                     },
                     {
                         label: 'Taxa B3 (0,20% a.a.)',
                         data: b3s,
-                        backgroundColor: '#f59e0b',
+                        backgroundColor: '#d97706',
                         borderRadius: 6
                     }
                 ]
@@ -823,13 +864,14 @@ function renderCharts(data) {
                     legend: {
                         position: 'top',
                         labels: {
-                            color: '#9ca3af',
+                            color: textColor,
                             usePointStyle: true,
-                            padding: 16
+                            padding: 16,
+                            font: { family: 'Plus Jakarta Sans', weight: '700' }
                         }
                     },
                     tooltip: {
-                        backgroundColor: '#1f2937',
+                        backgroundColor: '#0f172a',
                         callbacks: {
                             label: function(context) {
                                 return ` ${context.dataset.label}: ${formatMoney(context.parsed.y)}`;
@@ -840,12 +882,13 @@ function renderCharts(data) {
                 scales: {
                     x: {
                         grid: { display: false },
-                        ticks: { color: '#9ca3af' }
+                        ticks: { color: textColor, font: { weight: '600' } }
                     },
                     y: {
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        grid: { color: gridColor },
                         ticks: {
-                            color: '#9ca3af',
+                            color: textColor,
+                            font: { weight: '600' },
                             callback: function(val) {
                                 if (val >= 1000) return 'R$ ' + (val / 1000).toFixed(0) + 'k';
                                 return 'R$ ' + val;
@@ -881,13 +924,13 @@ function renderTable(data) {
 
         html += `
         <tr>
-            <td class="fw-bold text-white">Ano ${item.ano} (${item.mes}m)</td>
-            <td class="text-muted">${formatMoney(item.total_aportado)}</td>
-            <td class="fw-semibold text-primary">${formatMoney(valEtfIpca)}</td>
-            <td class="text-warning">${formatMoney(valTesouroIpca)}</td>
-            <td class="text-info">${formatMoney(valEtfSelic)}</td>
-            <td class="text-purple" style="color: #c084fc;">${formatMoney(valCdb)}</td>
-            <td class="text-secondary">${formatMoney(valTesouroSelic)}</td>
+            <td class="fw-bold text-dark">Ano ${item.ano} (${item.mes}m)</td>
+            <td class="text-muted fw-semibold">${formatMoney(item.total_aportado)}</td>
+            <td class="fw-bold text-primary">${formatMoney(valEtfIpca)}</td>
+            <td class="fw-bold text-warning-emphasis">${formatMoney(valTesouroIpca)}</td>
+            <td class="fw-bold text-info-emphasis">${formatMoney(valEtfSelic)}</td>
+            <td class="fw-bold text-purple" style="color: #7c3aed;">${formatMoney(valCdb)}</td>
+            <td class="fw-bold text-secondary">${formatMoney(valTesouroSelic)}</td>
         </tr>
         `;
     });
@@ -911,36 +954,36 @@ function renderInsights(data) {
     container.innerHTML = `
     <div class="row g-4 align-items-center">
         <div class="col-lg-8">
-            <h4 class="fw-bold text-white mb-2">
+            <h4 class="fw-bold text-dark mb-2">
                 <i class="bi bi-lightbulb-fill text-warning me-2"></i>Por que o ETF de Renda Fixa costuma vencer no longo prazo?
             </h4>
-            <p class="text-muted mb-3">
+            <p class="text-muted mb-3 fs-6">
                 No horizonte de <strong>${data.parametros.prazo_anos} anos</strong>, o ETF de Renda Fixa IPCA gerou 
                 <strong class="text-success">${formatMoney(diferencaEtfTesouro)} a mais</strong> que o Tesouro IPCA+ e 
                 <strong class="text-success">${formatMoney(diferencaEtfCdb)} a mais</strong> que o CDB Caixinha.
             </p>
             <div class="row g-3">
                 <div class="col-sm-6">
-                    <div class="p-3 rounded-3" style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2);">
+                    <div class="p-3 rounded-3" style="background: rgba(37, 99, 235, 0.05); border: 1px solid rgba(37, 99, 235, 0.15);">
                         <div class="small text-muted fw-bold text-uppercase mb-1">Economia de Custódia B3</div>
-                        <div class="fs-5 fw-bold text-primary">${formatMoney(b3Economizada)}</div>
+                        <div class="fs-4 fw-bold text-primary">${formatMoney(b3Economizada)}</div>
                         <small class="text-muted">ETFs não pagam a taxa de 0,20% a.a. que a B3 cobra no Tesouro Direto.</small>
                     </div>
                 </div>
                 <div class="col-sm-6">
-                    <div class="p-3 rounded-3" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2);">
+                    <div class="p-3 rounded-3" style="background: rgba(5, 150, 105, 0.05); border: 1px solid rgba(5, 150, 105, 0.15);">
                         <div class="small text-muted fw-bold text-uppercase mb-1">Alíquota Única de 15%</div>
-                        <div class="fs-5 fw-bold text-success">Sem Come-Cotas</div>
+                        <div class="fs-4 fw-bold text-success">Sem Come-Cotas</div>
                         <small class="text-muted">Aportes novos no ETF pagam 15% direto no resgate, sem passar pelos 22,5% do CDB/Tesouro.</small>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-lg-4 text-center">
-            <div class="p-4 rounded-4" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
-                <div class="display-6 fw-bold text-white mb-1">${((etfIpcaLiquido / cdbLiquido - 1) * 100).toFixed(1)}%</div>
-                <div class="text-muted small fw-semibold text-uppercase mb-3">Vantagem relativa sobre CDB de Caixinha</div>
-                <a href="#monitor-b3" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+            <div class="p-4 rounded-4" style="background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                <div class="display-5 fw-bold text-dark mb-1">${((etfIpcaLiquido / cdbLiquido - 1) * 100).toFixed(1)}%</div>
+                <div class="text-muted small fw-bold text-uppercase mb-3">Vantagem relativa sobre CDB de Caixinha</div>
+                <a href="#monitor-b3" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold">
                     <i class="bi bi-activity me-1"></i> Ver Cotações B3 em Tempo Real
                 </a>
             </div>
