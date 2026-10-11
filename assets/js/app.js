@@ -35,6 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Carregar dados reais da B3 e BrasilAPI
     carregarDadosMercadoIntegrados();
+    
+    // Inicializar Google Analytics via Vercel Env (GOOGLE_ANALYTICS_TAG)
+    carregarGoogleAnalytics();
 
     // Formulário de simulação
     const form = document.getElementById('simulation-form');
