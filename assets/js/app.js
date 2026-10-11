@@ -4,7 +4,7 @@
  * Otimizado para Tema Claro (Alta Legibilidade de Dados) & Fallback Vercel
  */
 
-// Formatação Monetária BRL
+// Formatação Monetária BRL com Separador de Milhar em Ponto (.) e Centavos em Vírgula (,)
 const formatMoney = (val) => {
     return new Intl.NumberFormat('pt-BR', {
         style: 'currency',
@@ -21,6 +21,64 @@ const formatPercent = (val) => {
         maximumFractionDigits: 2
     }).format((val || 0) / 100);
 };
+
+// Conversor seguro de inputs formatados em pt-BR (ex: '10.000,00' -> 10000)
+const parseNumberFromInput = (val) => {
+    if (typeof val === 'number') return val;
+    if (!val) return 0;
+    let clean = val.toString().replace(/\./g, '').replace(',', '.').replace(/[^0-9.-]/g, '');
+    const num = parseFloat(clean);
+    return isNaN(num) ? 0 : num;
+};
+
+// Formatação dinâmica ao digitar separando milhares com ponto (.) e decimais com vírgula (,)
+function formatMoneyInputString(value) {
+    if (value === undefined || value === null || value === '') return '';
+    let str = value.toString().trim();
+    let parts = str.split(',');
+    let intPart = parts[0].replace(/\D/g, '');
+    let decPart = parts.length > 1 ? parts[1].replace(/\D/g, '').slice(0, 2) : null;
+    
+    if (!intPart && decPart === null) return '';
+    if (!intPart) intPart = '0';
+    let formattedInt = Number(intPart).toLocaleString('pt-BR');
+    
+    if (decPart !== null) {
+        return `${formattedInt},${decPart}`;
+    }
+    return formattedInt;
+}
+
+// Configura máscara interativa de entrada monetária com separador de milhar (.)
+function setupMoneyInputMask(input) {
+    if (!input) return;
+
+    if (input.value) {
+        const num = parseNumberFromInput(input.value);
+        input.value = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
+    }
+
+    input.addEventListener('input', () => {
+        const cursorPosition = input.selectionStart;
+        const oldLength = input.value.length;
+        
+        input.value = formatMoneyInputString(input.value);
+        
+        const newLength = input.value.length;
+        const diff = newLength - oldLength;
+        const newCursor = Math.max(0, cursorPosition + diff);
+        input.setSelectionRange(newCursor, newCursor);
+    });
+
+    input.addEventListener('blur', () => {
+        if (!input.value.trim()) {
+            input.value = '0,00';
+            return;
+        }
+        const num = parseNumberFromInput(input.value);
+        input.value = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
+    });
+}
 
 let chartEvolutionInstance = null;
 let chartCostsInstance = null;
@@ -201,6 +259,16 @@ function initMasksAndInputs() {
         sliderCdi.addEventListener('input', () => {
             labelCdi.textContent = sliderCdi.value + '%';
         });
+    }
+
+    const inputAporteInicial = document.getElementById('input-aporte-inicial');
+    if (inputAporteInicial) {
+        setupMoneyInputMask(inputAporteInicial);
+    }
+
+    const inputAporteMensal = document.getElementById('input-aporte-mensal');
+    if (inputAporteMensal) {
+        setupMoneyInputMask(inputAporteMensal);
     }
 }
 
@@ -704,13 +772,13 @@ async function runSimulation() {
     }
 
     const payload = {
-        aporte_inicial: parseFloat(document.getElementById('input-aporte-inicial').value) || 0,
-        aporte_mensal: parseFloat(document.getElementById('input-aporte-mensal').value) || 0,
-        prazo_meses: parseInt(document.getElementById('input-prazo-meses').value) || 120,
-        taxa_selic: parseFloat(document.getElementById('input-taxa-selic').value) || 13.75,
-        taxa_cdi: parseFloat(document.getElementById('input-taxa-cdi').value) || 13.65,
-        taxa_ipca: parseFloat(document.getElementById('input-taxa-ipca').value) || 4.58,
-        juro_real_ipca: parseFloat(document.getElementById('input-juro-real-ipca').value) || 6.62,
+        aporte_inicial: parseNumberFromInput(document.getElementById('input-aporte-inicial').value) || 0,
+        aporte_mensal: parseNumberFromInput(document.getElementById('input-aporte-mensal').value) || 0,
+        prazo_meses: parseInt(document.getElementById('input-prazo-meses').value, 10) || 120,
+        taxa_selic: parseNumberFromInput(document.getElementById('input-taxa-selic').value) || 13.75,
+        taxa_cdi: parseNumberFromInput(document.getElementById('input-taxa-cdi').value) || 13.65,
+        taxa_ipca: parseNumberFromInput(document.getElementById('input-taxa-ipca').value) || 4.58,
+        juro_real_ipca: parseNumberFromInput(document.getElementById('input-juro-real-ipca').value) || 6.62,
         perc_cdi_caixinha: parseFloat(document.getElementById('slider-cdi-caixinha').value) || 100.0
     };
 
@@ -1062,9 +1130,7 @@ function renderCharts(data) {
                             color: textColor,
                             font: { weight: '600' },
                             callback: function(val) {
-                                if (val >= 1000000) return 'R$ ' + (val / 1000000).toFixed(1) + 'M';
-                                if (val >= 1000) return 'R$ ' + (val / 1000).toFixed(0) + 'k';
-                                return 'R$ ' + val;
+                                return 'R$ ' + Number(val).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
                             }
                         }
                     }
@@ -1144,8 +1210,7 @@ function renderCharts(data) {
                             color: textColor,
                             font: { weight: '600' },
                             callback: function(val) {
-                                if (val >= 1000) return 'R$ ' + (val / 1000).toFixed(0) + 'k';
-                                return 'R$ ' + val;
+                                return 'R$ ' + Number(val).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
                             }
                         }
                     }

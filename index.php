@@ -165,7 +165,7 @@ $gaTag = trim(getenv('GOOGLE_ANALYTICS_TAG') ?: ($_ENV['GOOGLE_ANALYTICS_TAG'] ?
                             <label for="input-aporte-inicial" class="form-label-custom">Aporte Inicial (R$)</label>
                             <div class="input-group input-group-custom">
                                 <span class="input-group-text">R$</span>
-                                <input type="number" step="100" min="0" class="form-control form-control-custom" id="input-aporte-inicial" value="10000" required>
+                                <input type="text" inputmode="decimal" class="form-control form-control-custom input-money-format" id="input-aporte-inicial" value="10.000,00" required placeholder="10.000,00">
                             </div>
                             <small class="text-muted fw-semibold" style="font-size: 0.76rem;">Patrimônio inicial a ser alocado</small>
                         </div>
@@ -175,7 +175,7 @@ $gaTag = trim(getenv('GOOGLE_ANALYTICS_TAG') ?: ($_ENV['GOOGLE_ANALYTICS_TAG'] ?
                             <label for="input-aporte-mensal" class="form-label-custom">Aporte Mensal Recorrente (R$)</label>
                             <div class="input-group input-group-custom">
                                 <span class="input-group-text">R$</span>
-                                <input type="number" step="50" min="0" class="form-control form-control-custom" id="input-aporte-mensal" value="1000" required>
+                                <input type="text" inputmode="decimal" class="form-control form-control-custom input-money-format" id="input-aporte-mensal" value="1.000,00" required placeholder="1.000,00">
                             </div>
                             <small class="text-muted fw-semibold" style="font-size: 0.76rem;">Investimento recorrente todo mês</small>
                         </div>
@@ -521,6 +521,6 @@ $gaTag = trim(getenv('GOOGLE_ANALYTICS_TAG') ?: ($_ENV['GOOGLE_ANALYTICS_TAG'] ?
     <!-- Scripts Bootstrap 5.3 & Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
-    <script src="assets/js/app.js?v=2.3.1"></script>
+    <script src="assets/js/app.js?v=2.4.0"></script>
 </body>
 </html>
