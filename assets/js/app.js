@@ -27,6 +27,43 @@ let chartCostsInstance = null;
 let currentSimulationData = null;
 let dadosB3Cache = null;
 
+// Inicializador Dinâmico do Google Analytics via Vercel Env (GOOGLE_ANALYTICS_TAG)
+async function carregarGoogleAnalytics() {
+    try {
+        const res = await fetch('api/config.php');
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.google_analytics_tag && data.google_analytics_tag.trim() !== '') {
+                initGoogleTag(data.google_analytics_tag.trim());
+            }
+        }
+    } catch (e) {
+        console.info('Google Analytics aguardando configuração da tag.');
+    }
+}
+
+function initGoogleTag(tagId) {
+    if (!tagId || tagId === 'G-XXXXXXXXXX') return;
+    if (document.getElementById('ga-gtag-script')) return;
+
+    const script = document.createElement('script');
+    script.id = 'ga-gtag-script';
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(tagId)}`;
+    document.head.appendChild(script);
+
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { window.dataLayer.push(arguments); }
+    window.gtag = gtag;
+    gtag('js', new Date());
+    gtag('config', tagId, {
+        page_title: document.title,
+        page_path: window.location.pathname
+    });
+
+    console.info(`[Analytics] Google Tag (${tagId}) conectada com sucesso.`);
+}
+
 // Inicialização da aplicação
 document.addEventListener('DOMContentLoaded', () => {
     initThemeManager();
@@ -36,8 +73,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Carregar dados reais da B3 e BrasilAPI
     carregarDadosMercadoIntegrados();
     
-    // Inicializar Google Analytics via Vercel Env (GOOGLE_ANALYTICS_TAG)
-    carregarGoogleAnalytics();
+    // Inicializar Google Analytics com proteção contra ReferenceError
+    try {
+        if (typeof carregarGoogleAnalytics === 'function') {
+            carregarGoogleAnalytics();
+        }
+    } catch (gaErr) {
+        console.warn('Erro ao carregar Analytics:', gaErr);
+    }
 
     // Formulário de simulação
     const form = document.getElementById('simulation-form');
@@ -526,45 +569,6 @@ async function runSimulation() {
             btnSimular.innerHTML = '<i class="bi bi-play-circle-fill me-2"></i>Calcular Projeção';
         }
     }
-}
-
-// Inicializador Dinâmico do Google Analytics via Vercel Env (GOOGLE_ANALYTICS_TAG)
-async function carregarGoogleAnalytics() {
-    try {
-        const res = await fetch('api/config.php');
-        if (res.ok) {
-            const data = await res.json();
-            if (data.google_analytics_tag && data.google_analytics_tag.trim() !== '') {
-                initGoogleTag(data.google_analytics_tag.trim());
-            }
-        }
-    } catch (e) {
-        console.info('Google Analytics aguardando configuração da tag.');
-    }
-}
-
-function initGoogleTag(tagId) {
-    if (!tagId || tagId === 'G-XXXXXXXXXX') return;
-    if (document.getElementById('ga-gtag-script')) return;
-
-    // Injetar script do Google Tag Manager
-    const script = document.createElement('script');
-    script.id = 'ga-gtag-script';
-    script.async = true;
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(tagId)}`;
-    document.head.appendChild(script);
-
-    // Inicializar dataLayer e comando gtag
-    window.dataLayer = window.dataLayer || [];
-    function gtag() { window.dataLayer.push(arguments); }
-    window.gtag = gtag;
-    gtag('js', new Date());
-    gtag('config', tagId, {
-        page_title: document.title,
-        page_path: window.location.pathname
-    });
-
-    console.info(`[Analytics] Google Tag (${tagId}) conectada com sucesso.`);
 }
 
 // Renderiza Cards e Métricas com Alta Legibilidade
